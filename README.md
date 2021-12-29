@@ -2,13 +2,7 @@
 
 **[WIP] Don't expect this to fully, reliably or consistently work. It's early days**
 
-This is a temporary repo to assist in loading data into the digital last postgres db. When 
-we have a fully automated process this can be archived.
-
-To use this, create a temporary ec2 instances with ssh access, but limit access from your current IP. 
-
-Use that instance to download scripts in the runner directory and use them to load data.
-
+This is a temporary repo to assist in loading data into the digital last postgres db.
 
 ## How to use this thing locally
 
