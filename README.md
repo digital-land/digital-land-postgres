@@ -1,6 +1,6 @@
 # Manage digital land postgres
 
-** [WIP] Don't expect this to fully, reliably or consistently work  - it's not inteded for the long term"
+**[WIP] Don't expect this to fully, reliably or consistently work. It's early days**
 
 This is a temporary repo to assist in loading data into the digital last postgres db. When 
 we have a fully automated process this can be archived.
