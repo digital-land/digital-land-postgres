@@ -10,8 +10,17 @@ Prerequisites
 
 A running postgres server - tested with PostgreSQL 13
 
+Assumption is target digital_land db already has entity and dataset tables. In other words
+migrations up to date.
+
 Load csv file exported form entity.sqlite3 into a running postgres server on localhost
 
     docker-compose build
 
-    docker-compose run --rm runner ./fetch_and_load_data.sh
+    docker-compose run --rm runner ./fetch_and_load_data.sh entity 
+
+or
+
+    docker-compose run --rm runner ./fetch_and_load_data.sh digital-land 
+
+
