@@ -19,10 +19,10 @@ Load csv file exported form entity.sqlite3 into a running postgres server on loc
 
 then
 
-    docker-compose run --rm runner ./fetch_and_load_data.sh entity 
+    docker-compose run --rm task ./load.sh entity 
 
 or
 
-    docker-compose run --rm runner ./fetch_and_load_data.sh digital-land 
+    docker-compose run --rm task ./load.sh digital-land 
 
 

@@ -2,9 +2,9 @@ version: "3.9"
 
 services:
 
-  runner:
+  task:
     build:
-      context: runner
+      context: task
     environment:
       - PGPASSWORD=postgres
       - PGUSER=postgres

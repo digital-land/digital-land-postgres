@@ -1,3 +1,6 @@
+
+# TODO - create digital land sql copy, upsert etc.
+
 class EntitySQL:
 
     clone_table = (

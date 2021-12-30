@@ -17,6 +17,6 @@ echo "exporting from $DATABASE.sqlite3"
 sqlite3 $DATABASE.sqlite3 ".read sql/export_$DATABASE.sql"
 
 echo "export done - load data from exported_$DATABASE.csv"
-python -m pgload.load --csvfile=exported_$DATABASE.csv --source=$DATABASE
+python3 -m pgload.load --csvfile=exported_$DATABASE.csv --source=$DATABASE
 
 echo "load done"
