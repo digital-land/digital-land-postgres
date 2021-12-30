@@ -1,13 +1,13 @@
-.headers off
+.headers on
 .mode csv
 .separator |
-.output exported_entity.tsv
+.output exported_entity.csv
 
 SELECT
-    e.entity,
+    e.entity as entity,
     nullif(e.name, "") as name,
     nullif(e.entry_date, "") as entry_date,
-    nullif(e.start_date, "") as start_data,
+    nullif(e.start_date, "") as start_date,
     nullif(e.end_date, "") as end_date,
     nullif(e.dataset, "") as dataset,
     nullif(e.json, "") as json,

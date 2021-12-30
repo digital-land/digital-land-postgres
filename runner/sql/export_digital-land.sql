@@ -1,10 +1,10 @@
-.headers off
+.headers on
 .mode csv
 .separator |
-.output exported_digital-land.tsv
+.output exported_digital-land.csv
 
 SELECT
-    d.dataset,
+    d.dataset as dataset,
     nullif(d.name, "") as name,
     nullif(d.entry_date, "") as entry_date,
     nullif(d.start_date, "") as start_date,

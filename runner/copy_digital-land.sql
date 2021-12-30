@@ -1,1 +1,0 @@
-\copy dataset(dataset,name,entry_date,start_date,end_date,collection,description,key_field,paint_options,plural,prefix,text,typology,wikidata,wikipedia) FROM './exported_digital-land.tsv' WITH (FORMAT CSV, HEADER, DELIMITER '|', FORCE_NULL(dataset,name,entry_date,start_date,end_date,collection,description,key_field,paint_options,plural,prefix,text,typology,wikidata,wikipedia))

@@ -132,5 +132,5 @@ dmypy.json
 .data
 .db-data
 .idea
-*.tsv
+*.csv
 *.sqlite*
