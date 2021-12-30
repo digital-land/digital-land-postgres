@@ -1,7 +1,7 @@
 .headers off
 .mode csv
 .separator |
-.output exported_entities.tsv
+.output exported_entity.tsv
 
 SELECT
     e.entity,
