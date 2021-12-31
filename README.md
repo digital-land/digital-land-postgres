@@ -17,12 +17,12 @@ Load csv file exported form entity.sqlite3 into a running postgres server on loc
 
     docker-compose build
 
-then
+then to load digital-land db run:
 
-    docker-compose run --rm task ./load.sh entity 
+    docker-compose run --rm task ./load.sh digital-land  
 
-and then
+or to load entities as well run:
 
-    docker-compose run --rm task ./load.sh digital-land 
+    docker-compose run --rm task ./load.sh entity digital-land 
 
 

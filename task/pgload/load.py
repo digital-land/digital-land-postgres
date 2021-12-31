@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 
+import os
 import logging
 import sys
 import csv
@@ -16,13 +17,14 @@ logger.addHandler(streamHandler)
 
 
 @click.command()
-@click.option("--host", default="localhost")
-@click.option("--database", default="digital_land")
-@click.option("--user", default="postgres")
-@click.option("--password", default="postgres")
 @click.option("--csvfile", required=True)
 @click.option("--source", required=True)
-def do_upsert(host, database, user, password, csvfile, source):
+def do_upsert(csvfile, source):
+
+    host = os.getenv("DB_WRITE_ENDPOINT", "localhost")
+    database = os.getenv("DB_NAME", "digital_land")
+    user = os.getenv("DB_USER_NAME", "postgres")
+    password = os.getenv("DB_PASSWORD", "postgres")
 
     if source == "entity":
         from pgload.sql import EntitySQL as sql
@@ -33,10 +35,7 @@ def do_upsert(host, database, user, password, csvfile, source):
         sys.exit(0)
 
     connection = psycopg2.connect(
-        host=host,
-        database=database,
-        user=user,
-        password=password
+        host=host, database=database, user=user, password=password
     )
     connection.autocommit = True
 
