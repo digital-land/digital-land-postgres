@@ -8,9 +8,7 @@ import click
 
 csv.field_size_limit(sys.maxsize)
 
-logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
-
 streamHandler = logging.StreamHandler(sys.stdout)
 formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 streamHandler.setFormatter(formatter)
@@ -24,13 +22,12 @@ logger.addHandler(streamHandler)
 @click.option("--password", default="postgres")
 @click.option("--csvfile", required=True)
 @click.option("--source", required=True)
-def do_entity_upsert(host, database, user, password, csvfile, source):
+def do_upsert(host, database, user, password, csvfile, source):
 
     if source == "entity":
         from pgload.sql import EntitySQL as sql
     elif source == "digital-land":
-        logger.info("not implemented")
-        sys.exit(0)
+        from pgload.sql import DatasetSQL as sql
     else:
         logger.info(f"can't import from {source}")
         sys.exit(0)
@@ -53,5 +50,5 @@ def do_entity_upsert(host, database, user, password, csvfile, source):
 if __name__ == "__main__":
 
     logger.info("Loading data into postgres")
-    do_entity_upsert()
+    do_upsert()
     logger.info("Finished")

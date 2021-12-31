@@ -1,10 +1,7 @@
-
-# TODO - create digital land sql copy, upsert etc.
-
 class EntitySQL:
 
     clone_table = (
-        "CREATE TEMPORARY TABLE __temp_table AS (SELECT * FROM ENTITY LIMIT 0);"
+        "CREATE TEMPORARY TABLE __temp_table AS (SELECT * FROM entity LIMIT 0);"
     )
 
     copy = """
@@ -39,7 +36,9 @@ class EntitySQL:
                 typology,
                 geojson,
                 geometry,
-                point))
+                point
+            )
+        )
     """
 
     upsert = """
@@ -60,4 +59,73 @@ class EntitySQL:
             geojson=EXCLUDED.geojson,
             geometry=EXCLUDED.geometry,
             point=EXCLUDED.point;
+    """
+
+
+class DatasetSQL:
+
+    clone_table = (
+        "CREATE TEMPORARY TABLE __temp_table AS (SELECT * FROM dataset LIMIT 0);"
+    )
+
+    copy = """
+        COPY __temp_table (
+            dataset,
+            name,
+            entry_date,
+            start_date,
+            end_date,
+            collection,
+            description,
+            key_field,
+            paint_options,
+            plural,
+            prefix,
+            text,
+            typology,
+            wikidata,
+            wikipedia
+        ) FROM STDIN WITH (
+            FORMAT CSV, 
+            HEADER, 
+            DELIMITER '|', 
+            FORCE_NULL(
+                dataset,
+                name,
+                entry_date,
+                start_date,
+                end_date,
+                collection,
+                description,
+                key_field,
+                paint_options,
+                plural,
+                prefix,
+                text,
+                typology,
+                wikidata,
+                wikipedia
+            )
+        )
+    """
+
+    upsert = """
+        INSERT INTO dataset
+        SELECT *
+        FROM __temp_table
+        ON CONFLICT (dataset) DO UPDATE
+        SET name=EXCLUDED.name,
+            entry_date=EXCLUDED.entry_date,
+            start_date=EXCLUDED.start_date,
+            end_date=EXCLUDED.end_date,
+            collection=EXCLUDED.collection,
+            description=EXCLUDED.description,
+            key_field=EXCLUDED.key_field,
+            paint_options=EXCLUDED.paint_options,
+            plural=EXCLUDED.plural,
+            prefix=EXCLUDED.prefix,
+            text=EXCLUDED.text,
+            typology=EXCLUDED.typology,
+            wikidata=EXCLUDED.wikidata,
+            wikipedia=EXCLUDED.wikipedia;
     """

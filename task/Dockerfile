@@ -9,6 +9,3 @@ WORKDIR src
 
 RUN pip install --user -U pip
 RUN pip install --user --no-cache-dir -r requirements.txt
-
-CMD ./load.sh entity
-CMD ./load.sh digital-land

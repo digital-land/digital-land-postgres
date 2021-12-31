@@ -21,7 +21,7 @@ then
 
     docker-compose run --rm task ./load.sh entity 
 
-or
+and then
 
     docker-compose run --rm task ./load.sh digital-land 
 
