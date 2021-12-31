@@ -10,6 +10,7 @@ import click
 csv.field_size_limit(sys.maxsize)
 
 logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 streamHandler = logging.StreamHandler(sys.stdout)
 formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 streamHandler.setFormatter(formatter)
@@ -26,6 +27,8 @@ def do_upsert(csvfile, source):
     user = os.getenv("DB_USER_NAME", "postgres")
     password = os.getenv("DB_PASSWORD", "postgres")
 
+    logger.info(f"Loading data from {source}")
+    
     if source == "entity":
         from pgload.sql import EntitySQL as sql
     elif source == "digital-land":
