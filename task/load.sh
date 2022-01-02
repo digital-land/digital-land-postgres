@@ -1,26 +1,22 @@
 #! /usr/bin/env sh
 set -e
 
-if [ "$#" -eq 0 ]
-then
-    echo "run ./load.sh with arguments [entity or digital-land or both]"
-    exit 1
-fi
+echo "task running with env vars S3_COLLECTION_BUCKET = $S3_COLLECTION_BUCKET and S3_KEY = $S3_KEY"
 
-for DATABASE in "$@"
-do
-    echo "loading $DATABASE"
-    URL="https://collection-dataset.s3.eu-west-2.amazonaws.com/$DATABASE-builder/dataset/$DATABASE.sqlite3"
+DATABASE=${S3_KEY##*/}
+DATABASE_NAME=${DATABASE%.*}
 
-    echo "downloading from $URL"
-    curl -O $URL
+echo DATABASE = $DATABASE
+echo DATABASE_NAME = $DATABASE_NAME
 
-    echo "exporting from $DATABASE.sqlite3"
-    sqlite3 $DATABASE.sqlite3 ".read sql/export_$DATABASE.sql"
+#URL="$S3_COLLECTION_BUCKET/$S3_KEY"
+#echo "downloading from $URL"
+#curl -O $URL
+#
+#echo "exporting $DATABASE to exported_$DATABASE_NAME.csv"
+#sqlite3 $DATABASE ".read sql/export_$DATABASE_NAME.sql"
+#
+#echo "load data from exported_$DATABASE_NAME.csv into postgres"
+#python3 -m pgload.load --csvfile=exported_$DATABASE_NAME.csv --source=$DATABASE_NAME
 
-    echo "export done - load data from exported_$DATABASE.csv"
-    python3 -m pgload.load --csvfile=exported_$DATABASE.csv --source=$DATABASE
-
-    echo "load done"
-done
-
+echo "load done"

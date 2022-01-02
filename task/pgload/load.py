@@ -28,7 +28,7 @@ def do_upsert(csvfile, source):
     password = os.getenv("DB_PASSWORD", "postgres")
 
     logger.info(f"Loading data from {source}")
-    
+
     if source == "entity":
         from pgload.sql import EntitySQL as sql
     elif source == "digital-land":
@@ -48,9 +48,8 @@ def do_upsert(csvfile, source):
             cursor.copy_expert(sql.copy, f)
         cursor.execute(sql.upsert)
 
+    logger.info(f"Finished loading from {source}")
+
 
 if __name__ == "__main__":
-
-    logger.info("Loading data into postgres")
     do_upsert()
-    logger.info("Finished")
