@@ -4,7 +4,7 @@
 ## Loading data into postgres in AWS
 
 This repoistory contains code that is used as a runnable task in ECS. The
-entry point [task/load.sh](tast/load.sh) expects environment variables
+entry point [task/load.sh](task/load.sh) expects environment variables
 are set for S3_COLLECTION_BUCKET and S3_KEY that provide a bucket and key
 to load data from. At the moment they keys are assumed to be sqlite files
 produced by the digital  land collection process.
