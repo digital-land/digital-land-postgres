@@ -8,4 +8,6 @@ services:
     environment:
       - PGPASSWORD=postgres
       - PGUSER=postgres
+      - S3_COLLECTION_BUCKET=${S3_COLLECTION_BUCKET}
+      - S3_KEY=${S3_KEY}
     network_mode: host
