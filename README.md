@@ -27,10 +27,12 @@ A running postgres server (tested with PostgreSQL 13)
 Assumption is target digital_land db already has entity and dataset tables. In other words
 migrations are up to date.
 
-There is a docker compose file to help in using this code locally. If you have postgres
-up and running on host machine and you don't need to used docker compose, then
-set the env variables and run load.sh in the task directory. If you want to use
-docker-compose then read on.
+There is a docker compose file to help in using this code locally. 
+
+_**If you have postgres up and running on host machine and you don't need or don't want to use docker compose, 
+then just set the env variables listed bekiw and run load.sh in the task directory.**_
+
+If you want to use docker-compose then read on.
 
 First build the image.
 
