@@ -20,14 +20,17 @@ To see how the values for bucket and key are extracated have a [look here](https
 
 ## Running this locally to load data into local postgres
 
-Prerequisites
+**Prerequisites**
 
 A running postgres server (tested with PostgreSQL 13)
 
 Assumption is target digital_land db already has entity and dataset tables. In other words
 migrations are up to date.
 
-There is a docker compose file to help in using this code locally.
+There is a docker compose file to help in using this code locally. If you have postgres
+up and running on host machine and you don't need to used docker compose, then
+set the env variables and run load.sh in the task directory. If you want to use
+docker-compose then read on.
 
 First build the image.
 
