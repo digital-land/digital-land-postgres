@@ -1,12 +1,12 @@
 #! /usr/bin/env sh
 set -e
 
-echo "task running with env vars S3_COLLECTION_BUCKET = $S3_COLLECTION_BUCKET and S3_KEY = $S3_KEY"
+echo "task running with env vars S3_BUCKET = $S3_BUCKET and S3_KEY = $S3_KEY"
 
 DATABASE=${S3_KEY##*/}
 DATABASE_NAME=${DATABASE%.*}
 
-URL="$S3_COLLECTION_BUCKET/$S3_KEY"
+URL="$S3_BUCKET/$S3_KEY"
 echo "downloading from $URL"
 curl -O $URL
 
