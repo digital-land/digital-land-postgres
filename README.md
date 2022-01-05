@@ -44,7 +44,7 @@ First build the image.
 
 then to load digital-land sqlite database set the following env variables (use a .env file, there's an .env.example in this repo):
 
-    S3_COLLECTION_BUCKET=https://collection-dataset.s3.eu-west-2.amazonaws.com
+    S3_BUCKET=https://collection-dataset.s3.eu-west-2.amazonaws.com
     S3_KEY=digital-land-builder/dataset/digital-land.sqlite3
 
 and run:
