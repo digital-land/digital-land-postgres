@@ -46,23 +46,19 @@ To load the entity database change the S3_KEY to the correct key for the entity 
 
 cd into the task directory and run:
 
-   ```
-   pip install -r requirements
-    ```
+      pip install -r requirements
 
-4. **Run the load script in task directory to load digital-land**
-   
-   ```
-   ./load.sh
-   ```
-   
-5. **Run the load script to load entity database**
-   
-   Update the S3_KEY in the .env file to S3_KEY=entity-builder/dataset/entity.sqlite3
+3. **Run the load script in task directory to load digital-land**
 
-   ```
-   ./load.sh
-   ``` 
+Remember the .env file is already set to load the digital-land db
+   
+    ./load.sh
+   
+6. **Run the load script to load entity database**
+   
+Update the S3_KEY in the .env file to S3_KEY=entity-builder/dataset/entity.sqlite3
+
+    ./load.sh
    
 You'll notice that the load script downloads sqlite databases and creates csv files in the directory it runs from. These
 files are git and docker ignored, so once done loading you can delete. It's a dumb script so each time you run it 
