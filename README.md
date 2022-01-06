@@ -4,17 +4,21 @@
 
 This repository contains code that is used as a runnable task in ECS. The
 entry point [task/load.sh](task/load.sh) expects environment variables
-are set for S3_COLLECTION_BUCKET and S3_KEY that provide a bucket and key
-to load data from. At the moment they keys are assumed to be sqlite files
-produced by the digital land collection process.
+are set for:
+    
+    S3_BUCKET=some-bucket
+    S3_KEY=some-key
 
-The task is triggered by an S3 put object event tracked by AWS Cloudtrail
-which extracts event metadata for the S3 bucket and key name and provides
-those to this container as enviroment variables. The setup of this is in the
-[Tasks module](https://github.com/digital-land/digital-land-infrastructure/tree/main/terraform/modules/tasks)
+These provide a bucket and key to load data from. At the moment the keys are assumed to be sqlite files produced by 
+the digital land collection process.
+
+The task is triggered by an S3 put object event tracked by AWS Cloudtrail which extracts event metadata for the S3 
+bucket and key name and provides those to this container as enviroment variables. 
+
+The setup of this is in the [Tasks module](https://github.com/digital-land/digital-land-infrastructure/tree/main/terraform/modules/tasks)
 of the digital-land-terraform repository.
 
-To see how the values for bucket and key are extracated have a [look here](https://github.com/digital-land/digital-land-infrastructure/blob/main/terraform/modules/tasks/main.tf#L136:L155)
+To see how the values for bucket and key are extracted have a [look here](https://github.com/digital-land/digital-land-infrastructure/blob/main/terraform/modules/tasks/main.tf#L136:L155)
 
 ## Running locally to load data into local postgres
 
