@@ -1,4 +1,4 @@
 .*
 *.sqlite*
 *.csv
-.env
+.env*

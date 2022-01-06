@@ -1,13 +1,12 @@
-# Manage digital land postgres
-
+# Load data into digital-land.info postgres database
 
 ## Loading data into postgres in AWS
 
-This repoistory contains code that is used as a runnable task in ECS. The
+This repository contains code that is used as a runnable task in ECS. The
 entry point [task/load.sh](task/load.sh) expects environment variables
 are set for S3_COLLECTION_BUCKET and S3_KEY that provide a bucket and key
 to load data from. At the moment they keys are assumed to be sqlite files
-produced by the digital  land collection process.
+produced by the digital land collection process.
 
 The task is triggered by an S3 put object event tracked by AWS Cloudtrail
 which extracts event metadata for the S3 bucket and key name and provides
@@ -17,46 +16,50 @@ of the digital-land-terraform repository.
 
 To see how the values for bucket and key are extracated have a [look here](https://github.com/digital-land/digital-land-infrastructure/blob/main/terraform/modules/tasks/main.tf#L136:L155)
 
-
-## Running this locally to load data into local postgres
+## Running locally to load data into local postgres
 
 **Prerequisites**
 
-A running postgres server (tested with PostgreSQL 13)
+   - A running postgres server (tested with PostgreSQL 14)
+   - curl
+   - sqlite 
 
-Assumption is target digital_land db already has entity and dataset tables. In other words
-migrations are up to date.
+The assumption is that the target digital_land db already has entity and dataset tables. In other words migrations 
+from the [digital-land.info](https://github.com/digital-land/digital-land.info) repository should have been run against 
+the postgres database you want to load data into (the postgres database used by you locally running digital-land.info web
+application)
 
-There is a docker compose file to help in using this code locally.
+### Steps to load data
 
-_**If you have postgres up and running on host machine and you don't need or don't want to use docker compose,
-then just set the env variables listed bekiw and run load.sh in the task directory.**_
+1. **Copy the file [task/.env.example](task/.env.example) to [task/.env](task/.env)**
 
-**Of course if you run locally outside of docker then create a virtualenv and install requirements.**
+With a fresh checkout that file configures the scripts in this repo to load the digital-land database.
 
-    pip install -r task/requirements
-
-If you want to use docker-compose then read on.
-
-First build the image.
-
-    docker-compose build
-
-then to load digital-land sqlite database set the following env variables (use a .env file, there's an .env.example in this repo):
-
-    S3_BUCKET=https://collection-dataset.s3.eu-west-2.amazonaws.com
-    S3_KEY=digital-land-builder/dataset/digital-land.sqlite3
-
-and run:
-
-    docker-compose run --rm task
-
-or to load entities run the above task but with the S3_KEY updated in the .env file to:
-
-    S3_KEY=entity-builder/dataset/entity.sqlite3
-
-then run:
-
-    docker-compose run --rm task
+To load the entity database change the S3_KEY to the correct key for the entity sqlite database (see below).
 
 
+2. **Create a virtualenv and install requirements**
+
+cd into the task directory and run:
+
+   ```
+   pip install -r requirements
+    ```
+
+4. **Run the load script in task directory to load digital-land**
+   
+   ```
+   ./load.sh
+   ```
+   
+5. **Run the load script to load entity database**
+   
+   Update the S3_KEY in the .env file to S3_KEY=entity-builder/dataset/entity.sqlite3
+
+   ```
+   ./load.sh
+   ``` 
+   
+You'll notice that the load script downloads sqlite databases and creates csv files in the directory it runs from. These
+files are git and docker ignored, so once done loading you can delete. It's a dumb script so each time you run it 
+the files get downloaded/created again.
