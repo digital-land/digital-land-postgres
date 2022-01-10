@@ -18,5 +18,8 @@ SELECT
     nullif(d.text, "") as text,
     nullif(d.typology, "") as typology,
     nullif(d.wikidata, "") as wikidata,
-    nullif(d.wikipedia, "") as wikipedia
-FROM dataset d;
+    nullif(d.wikipedia, "") as wikipedia,
+    "{" || GROUP_CONCAT(dt.theme, ',') || "}" as dataset_themes
+FROM dataset d, dataset_theme dt
+WHERE d.dataset = dt.dataset
+GROUP BY d.dataset;

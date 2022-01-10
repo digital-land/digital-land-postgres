@@ -84,7 +84,8 @@ class DatasetSQL:
             text,
             typology,
             wikidata,
-            wikipedia
+            wikipedia,
+            themes
         ) FROM STDIN WITH (
             FORMAT CSV, 
             HEADER, 
@@ -104,7 +105,8 @@ class DatasetSQL:
                 text,
                 typology,
                 wikidata,
-                wikipedia
+                wikipedia,
+                themes
             )
         )
     """
@@ -127,5 +129,6 @@ class DatasetSQL:
             text=EXCLUDED.text,
             typology=EXCLUDED.typology,
             wikidata=EXCLUDED.wikidata,
-            wikipedia=EXCLUDED.wikipedia;
+            wikipedia=EXCLUDED.wikipedia,
+            themes=EXCLUDED.themes;
     """
