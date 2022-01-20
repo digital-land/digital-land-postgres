@@ -7,6 +7,8 @@ import csv
 import psycopg2
 import click
 
+from pgload.sql import SQL
+
 csv.field_size_limit(sys.maxsize)
 
 logger = logging.getLogger(__name__)
@@ -16,39 +18,42 @@ formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(messag
 streamHandler.setFormatter(formatter)
 logger.addHandler(streamHandler)
 
+export_tables = {"entity": ["entity"], "digital-land": ["dataset", "typology", "organisation"]}
 
 @click.command()
-@click.option("--csvfile", required=True)
 @click.option("--source", required=True)
-def do_upsert(csvfile, source):
+def do_upsert(source):
 
     host = os.getenv("DB_WRITE_ENDPOINT", "localhost")
     database = os.getenv("DB_NAME", "digital_land")
     user = os.getenv("DB_USER_NAME", "postgres")
     password = os.getenv("DB_PASSWORD", "postgres")
 
-    logger.info(f"Loading data from {source}")
-
-    if source == "entity":
-        from pgload.sql import EntitySQL as sql
-    elif source == "digital-land":
-        from pgload.sql import DatasetSQL as sql
-    else:
-        logger.info(f"can't import from {source}")
-        sys.exit(0)
+    tables_to_export = export_tables[source]
 
     connection = psycopg2.connect(
         host=host, database=database, user=user, password=password
     )
     connection.autocommit = True
 
-    with connection.cursor() as cursor:
-        cursor.execute(sql.clone_table)
-        with open(csvfile) as f:
-            cursor.copy_expert(sql.copy, f)
-        cursor.execute(sql.upsert)
+    for table in tables_to_export:
+        logger.info(f"Loading from database: {source} table: {table}")
 
-    logger.info(f"Finished loading from {source}")
+        csv_filename = f"exported_{table}.csv"
+        with open(csv_filename, "r") as f:
+            reader = csv.DictReader(f, delimiter="|")
+            fieldnames = reader.fieldnames
+
+        sql = SQL(table=table, fields=fieldnames)
+
+        with connection.cursor() as cursor:
+            cursor.execute(sql.clone_table())
+            with open(csv_filename) as f:
+                cursor.copy_expert(sql.copy(), f)
+            cursor.execute(sql.upsert())
+            cursor.execute(sql.drop_clone_table())
+
+        logger.info(f"Finished loading from database: {source} table: {table}")
 
 
 if __name__ == "__main__":

@@ -1,134 +1,46 @@
-class EntitySQL:
+class SQL:
 
-    clone_table = (
-        "CREATE TEMPORARY TABLE __temp_table AS (SELECT * FROM entity LIMIT 0);"
-    )
+    def __init__(self, table:str, fields:list):
+        self.table = table
+        self.fields = fields
+        self.non_key_fields = [field for field in self.fields if field != self.table]
 
-    copy = """
-        COPY __temp_table (
-            entity,
-            name,
-            entry_date,
-            start_date,
-            end_date,
-            dataset,
-            json,
-            organisation_entity,
-            prefix,
-            reference,
-            typology,
-            geojson,
-            geometry,
-            point
-        ) FROM STDIN WITH (
-            FORMAT CSV, 
-            HEADER, 
-            DELIMITER '|', 
-            FORCE_NULL(
-                name,
-                entry_date,
-                start_date,
-                end_date,
-                dataset,
-                organisation_entity,
-                prefix,
-                reference,
-                typology,
-                geojson,
-                geometry,
-                point
-            )
+    def clone_table(self):
+        sql = (
+            f"CREATE TEMPORARY TABLE __temp_table AS (SELECT * FROM {self.table} LIMIT 0);"
         )
-    """
+        return sql
 
-    upsert = """
-        INSERT INTO entity
-        SELECT *
-        FROM __temp_table
-        ON CONFLICT (entity) DO UPDATE
-        SET name=EXCLUDED.name,
-            entry_date=EXCLUDED.entry_date,
-            start_date=EXCLUDED.start_date,
-            end_date=EXCLUDED.end_date,
-            dataset=EXCLUDED.dataset,
-            json=EXCLUDED.json,
-            organisation_entity=EXCLUDED.organisation_entity,
-            prefix=EXCLUDED.prefix,
-            reference=EXCLUDED.reference,
-            typology=EXCLUDED.typology,
-            geojson=EXCLUDED.geojson,
-            geometry=EXCLUDED.geometry,
-            point=EXCLUDED.point;
-    """
+    def copy(self):
 
-
-class DatasetSQL:
-
-    clone_table = (
-        "CREATE TEMPORARY TABLE __temp_table AS (SELECT * FROM dataset LIMIT 0);"
-    )
-
-    copy = """
-        COPY __temp_table (
-            dataset,
-            name,
-            entry_date,
-            start_date,
-            end_date,
-            collection,
-            description,
-            key_field,
-            paint_options,
-            plural,
-            prefix,
-            text,
-            typology,
-            wikidata,
-            wikipedia,
-            themes
-        ) FROM STDIN WITH (
-            FORMAT CSV, 
-            HEADER, 
-            DELIMITER '|', 
-            FORCE_NULL(
-                dataset,
-                name,
-                entry_date,
-                start_date,
-                end_date,
-                collection,
-                description,
-                key_field,
-                paint_options,
-                plural,
-                prefix,
-                text,
-                typology,
-                wikidata,
-                wikipedia,
-                themes
+        sql = f"""
+            COPY __temp_table (
+                {",".join(self.fields)}
+            ) FROM STDIN WITH (
+                FORMAT CSV, 
+                HEADER, 
+                DELIMITER '|', 
+                FORCE_NULL(
+                    {",".join(self.non_key_fields)}
+                )
             )
-        )
-    """
+        """
+        return sql
 
-    upsert = """
-        INSERT INTO dataset
-        SELECT *
-        FROM __temp_table
-        ON CONFLICT (dataset) DO UPDATE
-        SET name=EXCLUDED.name,
-            entry_date=EXCLUDED.entry_date,
-            start_date=EXCLUDED.start_date,
-            end_date=EXCLUDED.end_date,
-            collection=EXCLUDED.collection,
-            description=EXCLUDED.description,
-            key_field=EXCLUDED.key_field,
-            paint_options=EXCLUDED.paint_options,
-            plural=EXCLUDED.plural,
-            prefix=EXCLUDED.prefix,
-            text=EXCLUDED.text,
-            typology=EXCLUDED.typology,
-            wikidata=EXCLUDED.wikidata,
-            wikipedia=EXCLUDED.wikipedia,
-            themes=EXCLUDED.themes;
-    """
+    def upsert(self):
+        excluded = [f"{field}=EXCLUDED.{field}" for field in self.non_key_fields]
+        sql = f"""
+            INSERT INTO {self.table}
+            SELECT *
+            FROM __temp_table
+            ON CONFLICT ({self.table}) DO UPDATE
+            SET {",".join(excluded)};
+        """
+        return sql
+
+    def drop_clone_table(self):
+        sql = (
+            f"DROP TABLE __temp_table;"
+        )
+        return sql
+
