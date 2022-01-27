@@ -24,9 +24,6 @@ FROM dataset d, dataset_theme dt
 WHERE d.dataset = dt.dataset
 GROUP BY d.dataset;
 
-.headers on
-.mode csv
-.separator |
 .output exported_organisation.csv
 
 SELECT
@@ -44,10 +41,6 @@ SELECT
     nullif(o.website, "") as website
 FROM organisation o;
 
-
-.headers on
-.mode csv
-.separator |
 .output exported_typology.csv
 
 SELECT
@@ -62,3 +55,20 @@ SELECT
     nullif(t.wikidata, "") as wikidata,
     nullif(t.wikipedia, "") as wikipedia
 FROM typology t;
+
+.output exported_dataset_collection.csv
+
+SELECT
+    nullif(source_pipeline.pipeline, "") as dataset_collection,
+    nullif(resource.resource, "") as resource,
+    nullif(resource.end_date, "") as resource_end_date,
+    nullif(resource.entry_date, "") as resource_entry_date,
+    max(resource.start_date) as last_updated,
+    max(log.entry_date) as last_collection_attempt
+FROM resource, resource_endpoint, source, source_pipeline, log
+WHERE source_pipeline.pipeline IN (SELECT distinct(dataset) FROM DATASET)
+  AND resource.resource = resource_endpoint.resource
+  AND resource_endpoint.endpoint = source.endpoint
+  AND source.source = source_pipeline.source
+  AND source.endpoint = log.endpoint
+GROUP BY source_pipeline.pipeline;
