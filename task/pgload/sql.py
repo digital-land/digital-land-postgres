@@ -1,14 +1,11 @@
 class SQL:
-
-    def __init__(self, table:str, fields:list):
+    def __init__(self, table: str, fields: list):
         self.table = table
         self.fields = fields
         self.non_key_fields = [field for field in self.fields if field != self.table]
 
     def clone_table(self):
-        sql = (
-            f"CREATE TEMPORARY TABLE __temp_table AS (SELECT * FROM {self.table} LIMIT 0);"
-        )
+        sql = f"CREATE TEMPORARY TABLE __temp_table AS (SELECT * FROM {self.table} LIMIT 0);"
         return sql
 
     def copy(self):
@@ -39,8 +36,5 @@ class SQL:
         return sql
 
     def drop_clone_table(self):
-        sql = (
-            f"DROP TABLE __temp_table;"
-        )
+        sql = f"DROP TABLE __temp_table;"
         return sql
-

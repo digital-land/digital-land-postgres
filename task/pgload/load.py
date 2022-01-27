@@ -18,7 +18,17 @@ formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(messag
 streamHandler.setFormatter(formatter)
 logger.addHandler(streamHandler)
 
-export_tables = {"entity": ["entity"], "digital-land": ["dataset", "typology", "organisation", "dataset_collection"]}
+export_tables = {
+    "entity": ["entity"],
+    "digital-land": [
+        "dataset",
+        "typology",
+        "organisation",
+        "dataset_collection",
+        "dataset_publication",
+    ],
+}
+
 
 @click.command()
 @click.option("--source", required=True)

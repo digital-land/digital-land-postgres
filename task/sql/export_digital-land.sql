@@ -72,3 +72,15 @@ WHERE source_pipeline.pipeline IN (SELECT distinct(dataset) FROM DATASET)
   AND source.source = source_pipeline.source
   AND source.endpoint = log.endpoint
 GROUP BY source_pipeline.pipeline;
+
+
+.output exported_dataset_publication.csv
+
+SELECT
+    source_pipeline.pipeline AS dataset_publication,
+    COUNT(DISTINCT source.organisation) AS expected_publisher_count,
+    COUNT(DISTINCT CASE WHEN source.endpoint != '' THEN source.organisation END) AS publisher_count
+FROM source
+    INNER JOIN source_pipeline
+        ON source.source = source_pipeline.source
+GROUP BY dataset_publication
