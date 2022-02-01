@@ -46,7 +46,7 @@ To load the entity database change the S3_KEY to the correct key for the entity 
 
 cd into the task directory and run:
 
-      pip install -r requirements
+      pip install -r requirements.txt
 
 3. **Run the load script in task directory to load digital-land**
 
