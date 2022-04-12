@@ -5,7 +5,7 @@ RUN apt install -y curl sqlite python3-pip
 RUN apt clean
 
 ADD . /src
-WORKDIR src
+WORKDIR /src
 
 RUN pip install --user -U pip
 RUN pip install --user --no-cache-dir -r requirements.txt
