@@ -35,7 +35,7 @@ export_tables = {
 
 @click.command()
 @click.option("--source", required=True)
-def do_upsert(source):
+def do_replace(source):
 
     host = os.getenv("DB_WRITE_ENDPOINT", "localhost")
     database = os.getenv("DB_NAME", "digital_land")
@@ -47,7 +47,7 @@ def do_upsert(source):
     connection = psycopg2.connect(
         host=host, database=database, user=user, password=password
     )
-    connection.autocommit = True
+    connection.autocommit = False
 
     for table in tables_to_export:
         logger.info(f"Loading from database: {source} table: {table}")
@@ -63,11 +63,12 @@ def do_upsert(source):
             cursor.execute(sql.clone_table())
             with open(csv_filename) as f:
                 cursor.copy_expert(sql.copy(), f)
-            cursor.execute(sql.upsert())
+            cursor.execute(sql.rename_tables())
             cursor.execute(sql.drop_clone_table())
+        connection.commit()
 
         logger.info(f"Finished loading from database: {source} table: {table}")
 
 
 if __name__ == "__main__":
-    do_upsert()
+    do_replace()

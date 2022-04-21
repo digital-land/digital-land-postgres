@@ -5,36 +5,27 @@ class SQL:
         self.non_key_fields = [field for field in self.fields if field != self.table]
 
     def clone_table(self):
-        sql = f"CREATE TEMPORARY TABLE __temp_table AS (SELECT * FROM {self.table} LIMIT 0);"
-        return sql
+        return f"CREATE TABLE {self.table}__new (LIKE {self.table} INCLUDING ALL);"
 
     def copy(self):
-
-        sql = f"""
-            COPY __temp_table (
+        return f"""
+            COPY {self.table}__new (
                 {",".join(self.fields)}
             ) FROM STDIN WITH (
-                FORMAT CSV, 
-                HEADER, 
-                DELIMITER '|', 
+                FORMAT CSV,
+                HEADER,
+                DELIMITER '|',
                 FORCE_NULL(
                     {",".join(self.non_key_fields)}
                 )
-            )
+            );
         """
-        return sql
 
-    def upsert(self):
-        excluded = [f"{field}=EXCLUDED.{field}" for field in self.non_key_fields]
-        sql = f"""
-            INSERT INTO {self.table}
-            SELECT *
-            FROM __temp_table
-            ON CONFLICT ({self.table}) DO UPDATE
-            SET {",".join(excluded)};
+    def rename_tables(self):
+        return f"""
+            ALTER TABLE {self.table} RENAME TO {self.table}__old;
+            ALTER TABLE {self.table}__new RENAME TO {self.table};
         """
-        return sql
 
     def drop_clone_table(self):
-        sql = f"DROP TABLE __temp_table;"
-        return sql
+        return f"DROP TABLE {self.table}__old;"
