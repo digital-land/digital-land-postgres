@@ -1,10 +1,11 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
 
 import os
 import logging
 import sys
 import csv
 import psycopg2
+
 import click
 
 from pgload.sql import SQL
@@ -35,17 +36,21 @@ export_tables = {
 
 @click.command()
 @click.option("--source", required=True)
-def do_replace(source):
+def do_replace_cli(source):
 
     host = os.getenv("DB_WRITE_ENDPOINT", "localhost")
     database = os.getenv("DB_NAME", "digital_land")
     user = os.getenv("DB_USER_NAME", "postgres")
     password = os.getenv("DB_PASSWORD", "postgres")
+    port = 5432
+    return do_replace(source, host, database, user, password, port)
 
+
+def do_replace(source, host, database, user, password, port):
     tables_to_export = export_tables[source]
 
     connection = psycopg2.connect(
-        host=host, database=database, user=user, password=password
+        host=host, database=database, user=user, password=password, port=port
     )
     connection.autocommit = False
 
@@ -71,4 +76,4 @@ def do_replace(source):
 
 
 if __name__ == "__main__":
-    do_replace()
+    do_replace_cli()
