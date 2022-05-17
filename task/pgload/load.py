@@ -30,6 +30,7 @@ export_tables = {
         "organisation",
         "dataset_collection",
         "dataset_publication",
+        "lookup"
     ],
 }
 

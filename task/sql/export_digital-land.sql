@@ -83,4 +83,17 @@ SELECT
 FROM source
     INNER JOIN source_pipeline
         ON source.source = source_pipeline.source
-GROUP BY dataset_publication
+GROUP BY dataset_publication;
+
+
+.output exported_lookup.csv
+
+SELECT
+    l.rowid as id,
+    l.entity as entity,
+    nullif(l.prefix, "") as prefix,
+    nullif(l.reference, "") as reference,
+    nullif(l.entry_date, "") as entry_date,
+    nullif(l.start_date, "") as start_date,
+    nullif(l.value, "") as value
+FROM lookup l;
