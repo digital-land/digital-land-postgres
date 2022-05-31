@@ -20,17 +20,14 @@ streamHandler.setFormatter(formatter)
 logger.addHandler(streamHandler)
 
 export_tables = {
-    "entity": [
-        "entity",
-        "old_entity"
-    ],
+    "entity": ["entity", "old_entity"],
     "digital-land": [
         "dataset",
         "typology",
         "organisation",
         "dataset_collection",
         "dataset_publication",
-        "lookup"
+        "lookup",
     ],
 }
 
