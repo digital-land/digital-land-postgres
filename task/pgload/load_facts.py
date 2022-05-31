@@ -8,6 +8,8 @@ import click
 import psycopg2
 import concurrent.futures
 
+import requests
+
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 streamHandler = logging.StreamHandler(sys.stdout)
@@ -22,10 +24,12 @@ password = os.getenv("DB_PASSWORD", "postgres")
 port = 5432
 
 
+datasette_url = "https://datasette.digital-land.info/{dataset}/fact.json?_shape=objects&_labels=off&_size=max"
+
+
 @click.command()
-@click.option("--bucket", required=True)
-def load_facts(bucket):
-    logger.info("Load facts running")
+def load_facts():
+    logger.info("Load facts")
 
     connection = psycopg2.connect(
         host=host, database=database, user=user, password=password, port=port
@@ -52,97 +56,58 @@ def load_facts(bucket):
         for collection, datasets in collections.items():
             futures.append(
                 executor.submit(
-                    load_facts_by_collection,
-                    bucket=bucket,
-                    collection=collection,
-                    datasets=datasets,
+                    load_facts_by_collection, collection=collection, datasets=datasets
                 )
             )
         for future in concurrent.futures.as_completed(futures):
-            print(future.result())
+            logger.info(future.result())
 
 
-def load_facts_by_collection(bucket, collection, datasets):
-    for dataset in datasets:
-        with tempfile.TemporaryDirectory() as tmpdir:
-            logger.info(
-                f"loading facts from collection: {collection} dataset: {dataset}"
-            )
-            csv_path = get_and_export_dataset_sqlite(
-                bucket, collection, dataset, tmpdir
-            )
-            if csv_path is not None:
-                try:
-                    connection = psycopg2.connect(
-                        host=host,
-                        database=database,
-                        user=user,
-                        password=password,
-                        port=port,
-                    )
+def load_facts_into_postgres(rows):
 
-                    temp_table_name = f"__temp_table_{dataset.replace('-', '_')}"
+    for row in rows:
+        for key, val in row.items():
+            if not val:
+                row[key] = None
 
-                    clone = f"CREATE TEMPORARY TABLE {temp_table_name} AS (SELECT * FROM fact LIMIT 0);"
+    raw_keys = rows[0].keys()
+    columns = ",".join(raw_keys)
+    values = ",".join([f"%({key})s" for key in raw_keys])
+    conflicting = ",".join([f"{key}=EXCLUDED.{key}" for key in raw_keys])
+    on_conflict = f"SET {conflicting}"
 
-                    copy = f"""
-                        COPY {temp_table_name} (
-                            fact, entity, field, value, reference_entity, entry_date, start_date, end_date
-                        ) FROM STDIN WITH (
-                            FORMAT CSV, 
-                            HEADER, 
-                            DELIMITER '|', 
-                            FORCE_NULL(
-                                field, value, reference_entity, entry_date, start_date, end_date
-                            )
-                        )"""
-                    upsert = f"""
-                        INSERT INTO fact
-                        SELECT *
-                        FROM {temp_table_name}
-                        ON CONFLICT (fact) DO UPDATE
-                        SET field=EXCLUDED.field,
-                            value=EXCLUDED.value,
-                            reference_entity=EXCLUDED.reference_entity,
-                            entry_date=EXCLUDED.entry_date,
-                            start_date=EXCLUDED.start_date,
-                            end_date=EXCLUDED.end_date;"""
+    connection = psycopg2.connect(
+        host=host, database=database, user=user, password=password, port=port
+    )
 
-                    with connection.cursor() as cursor:
-                        cursor.execute(clone)
-                        with open(csv_path) as f:
-                            cursor.copy_expert(copy, f)
-                        cursor.execute(upsert)
-                        connection.commit()
-                except Exception as e:
-                    msg = f"Error trying to load from {csv_path} for dataset {dataset}"
-                    logger.exception(msg)
-            else:
-                msg = f"Could not load facts for {dataset}"
-                logger.info(msg)
-
-    return f"Completed load of facts from collection: {collection} datasets: {datasets}"
-
-
-def get_and_export_dataset_sqlite(bucket, collection, dataset, download_dir):
-    url = f"https://{bucket}.s3.eu-west-2.amazonaws.com/{collection}-collection/dataset/{dataset}.sqlite3"
-    sqlite_path = os.path.join(download_dir, f"{dataset}.sqlite3")
-    result = subprocess.run(["curl", url, "--output", sqlite_path])
-    path = pathlib.Path(sqlite_path)
-    if result.returncode == 0 and path.exists() and path.stat().st_size > 0:
-        csv_path = os.path.join(download_dir, "exported_facts.csv")
-        subprocess.run(
-            [
-                "sqlite3",
-                sqlite_path,
-                f".output {csv_path}",
-                ".read sql/export_facts.sql",
-            ]
+    with connection.cursor() as cursor:
+        cursor.executemany(
+            f"INSERT INTO fact ({columns}) VALUES ({values}) ON CONFLICT (fact) DO UPDATE {on_conflict};",
+            rows,
         )
-        return csv_path
-    else:
-        logger.info(f"Could not get sqlite file from {url}")
-        return None
+
+    connection.commit()
+    return len(rows)
+
+
+def load_facts_by_collection(collection, datasets):
+
+    for dataset in datasets:
+        logger.info(f"loading facts from collection: {collection} dataset: {dataset}")
+        url = datasette_url.format(dataset=dataset)
+        total_inserted = 0
+        while url:
+            resp = requests.get(url)
+            data = resp.json()
+            if data.get("rows"):
+                total_inserted += load_facts_into_postgres(data["rows"])
+                total_records = data["filtered_table_rows_count"]
+                logger.info(
+                    f"inserted {total_inserted} of {total_records} from {dataset}"
+                )
+            url = data.get("next_url", False)
+        logger.info(f"Done fetching {dataset}")
+    return f"Done loading collection: {collection} dataset: {dataset}"
 
 
 if __name__ == "__main__":
