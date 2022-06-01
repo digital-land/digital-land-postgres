@@ -43,12 +43,6 @@ if [ -n "$CF_DATABASE_SERVICE_NAME" ]; then
 else
   echo "load data into RDS postgres"
   python3 -m pgload.load --source=$DATABASE_NAME
-
-  if [ "$DATABASE_NAME" = "entity" ]; then
-    echo "loading facts"
-    python3 -m pgload.load_facts
-  fi
-
 fi
 
 echo "load done"
