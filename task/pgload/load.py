@@ -73,11 +73,11 @@ def do_replace(source, host, database, user, password, port):
         logger.info(f"Finished loading from database: {source} table: {table}")
 
         if source == "entity" and table == "entity":
-            logger.info(f"Fix invalid geometries")
 
             make_valid_multipolygon = """
-                UPDATE entity set geometry = ST_MakeValid(geometry, 'method=structure')
-                WHERE geometry IS NOT NULL AND NOT ST_IsValid(geometry);
+                UPDATE entity set geometry = ST_MakeValid(geometry)
+                WHERE geometry IS NOT NULL AND NOT ST_IsValid(geometry)
+                AND ST_GeometryType(ST_MakeValid(geometry)) = 'ST_MultiPolygon';
                 """.strip()
 
             with connection.cursor() as cursor:
@@ -85,8 +85,22 @@ def do_replace(source, host, database, user, password, port):
                 rowcount = cursor.rowcount
                 connection.commit()
 
-            logger.info(f"Updated {rowcount} rows")
-            logger.info(f"Done fixing invalid geometries")
+            logger.info(f"Updated {rowcount} rows with valid multi polygons")
+
+            make_valid_with_handle_geometry_collection = """
+                UPDATE entity SET geometry = ST_CollectionExtract(ST_MakeValid(geometry))
+                WHERE geometry IS NOT NULL AND NOT ST_IsValid(geometry)
+                AND ST_GeometryType(ST_MakeValid(geometry)) = 'ST_GeometryCollection';
+                """.strip()
+
+            with connection.cursor() as cursor:
+                cursor.execute(make_valid_with_handle_geometry_collection)
+                rowcount = cursor.rowcount
+                connection.commit()
+
+            logger.info(
+                f"Updated {rowcount} rows with valid geometry collections converted to multi polygons"
+            )
 
 
 if __name__ == "__main__":
