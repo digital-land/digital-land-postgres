@@ -19,9 +19,12 @@ SELECT
     nullif(d.typology, "") as typology,
     nullif(d.wikidata, "") as wikidata,
     nullif(d.wikipedia, "") as wikipedia,
-    "{" || GROUP_CONCAT(dt.theme, ',') || "}" as themes
-FROM dataset d, dataset_theme dt
+    "{" || GROUP_CONCAT(dt.theme, ',') || "}" as themes,
+    nullif(s.attribution, "") as attribution,
+    nullif(s.licence, "") as licence
+FROM dataset d, dataset_theme dt, source s
 WHERE d.dataset = dt.dataset
+AND d.collection = s.collection
 GROUP BY d.dataset;
 
 .output exported_organisation.csv
