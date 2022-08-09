@@ -24,7 +24,6 @@ SELECT
     nullif(s.licence, "") as licence
 FROM dataset d, dataset_theme dt, source s
 WHERE d.dataset = dt.dataset
-AND d.collection = s.collection
 GROUP BY d.dataset;
 
 .output exported_organisation.csv
