@@ -20,9 +20,9 @@ SELECT
     nullif(d.wikidata, "") as wikidata,
     nullif(d.wikipedia, "") as wikipedia,
     "{" || GROUP_CONCAT(dt.theme, ',') || "}" as themes,
-    nullif(s.attribution, "") as attribution,
-    nullif(s.licence, "") as licence
-FROM dataset d, dataset_theme dt, source s
+    nullif(d.attribution, "") as attribution,
+    nullif(d.licence, "") as licence
+FROM dataset d, dataset_theme dt
 WHERE d.dataset = dt.dataset
 GROUP BY d.dataset;
 
