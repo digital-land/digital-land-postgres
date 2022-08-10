@@ -20,8 +20,8 @@ SELECT
     nullif(d.wikidata, "") as wikidata,
     nullif(d.wikipedia, "") as wikipedia,
     "{" || GROUP_CONCAT(dt.theme, ',') || "}" as themes,
-    nullif(d.attribution, "") as attribution,
-    nullif(d.licence, "") as licence
+    nullif(d.attribution, "") as attribution_id,
+    nullif(d.licence, "") as licence_id
 FROM dataset d, dataset_theme dt
 WHERE d.dataset = dt.dataset
 GROUP BY d.dataset;
@@ -99,3 +99,26 @@ SELECT
     nullif(l.start_date, "") as start_date,
     nullif(l.value, "") as value
 FROM lookup l;
+
+
+.output exported_attribution.csv
+
+SELECT
+    a.attribution as attribution,
+    nullif(a.text, "") as text,
+    nullif(a.entry_date, "") as entry_date,
+    nullif(a.start_date, "") as start_date,
+    nullif(a.end_date, "") as end_date
+FROM attribution a;
+
+
+.output exported_licence.csv
+
+SELECT
+    l.licence as licence,
+    nullif(l.text, "") as text,
+    nullif(l.entry_date, "") as entry_date,
+    nullif(l.start_date, "") as start_date,
+    nullif(l.end_date, "") as end_date
+FROM licence l;
+

@@ -28,6 +28,8 @@ export_tables = {
         "dataset_collection",
         "dataset_publication",
         "lookup",
+        "attribution",
+        "licence",
     ],
 }
 
