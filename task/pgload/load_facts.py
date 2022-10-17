@@ -7,6 +7,7 @@ import os
 import click
 import psycopg2
 import concurrent.futures
+import urllib.parse as urlparse
 
 import requests
 
@@ -17,11 +18,19 @@ formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(messag
 streamHandler.setFormatter(formatter)
 logger.addHandler(streamHandler)
 
-host = os.getenv("DB_WRITE_ENDPOINT", "localhost")
-database = os.getenv("DB_NAME", "digital_land")
-user = os.getenv("DB_USER_NAME", "postgres")
-password = os.getenv("DB_PASSWORD", "postgres")
-port = 5432
+try:
+    url = urlparse.urlparse(os.getenv('WRITE_DATABASE_URL'))
+    database = url.path[1:]
+    user = url.username
+    password = url.password
+    host = url.hostname
+    port = url.port
+except:
+    host = os.getenv("DB_WRITE_ENDPOINT", "localhost")
+    database = os.getenv("DB_NAME", "digital_land")
+    user = os.getenv("DB_USER_NAME", "postgres")
+    password = os.getenv("DB_PASSWORD", "postgres")
+    port = 5432
 
 
 datasette_url = "https://datasette.digital-land.info/{dataset}/fact.json?_shape=objects&_labels=off&_size=max"
