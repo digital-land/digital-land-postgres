@@ -5,6 +5,7 @@ import logging
 import sys
 import csv
 import psycopg2
+import urllib.parse as urlparse
 
 import click
 
@@ -37,12 +38,20 @@ export_tables = {
 @click.command()
 @click.option("--source", required=True)
 def do_replace_cli(source):
+    try:
+        url = urlparse.urlparse(os.getenv('WRITE_DATABASE_URL'))
+        database = url.path[1:]
+        user = url.username
+        password = url.password
+        host = url.hostname
+        port = url.port
+    except:
+        host = os.getenv("DB_WRITE_ENDPOINT", "localhost")
+        database = os.getenv("DB_NAME", "digital_land")
+        user = os.getenv("DB_USER_NAME", "postgres")
+        password = os.getenv("DB_PASSWORD", "postgres")
+        port = 5432
 
-    host = os.getenv("DB_WRITE_ENDPOINT", "localhost")
-    database = os.getenv("DB_NAME", "digital_land")
-    user = os.getenv("DB_USER_NAME", "postgres")
-    password = os.getenv("DB_PASSWORD", "postgres")
-    port = 5432
     return do_replace(source, host, database, user, password, port)
 
 
@@ -75,7 +84,6 @@ def do_replace(source, host, database, user, password, port):
         logger.info(f"Finished loading from database: {source} table: {table}")
 
         if source == "entity" and table == "entity":
-
             make_valid_multipolygon = """
                 UPDATE entity set geometry = ST_MakeValid(geometry)
                 WHERE geometry IS NOT NULL AND NOT ST_IsValid(geometry)
