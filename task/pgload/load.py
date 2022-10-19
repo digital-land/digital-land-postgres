@@ -38,6 +38,12 @@ export_tables = {
 @click.command()
 @click.option("--source", required=True)
 def do_replace_cli(source):
+    return do_replace(source)
+
+
+def do_replace(source):
+    tables_to_export = export_tables[source]
+
     try:
         url = urlparse.urlparse(os.getenv('WRITE_DATABASE_URL'))
         database = url.path[1:]
@@ -45,22 +51,19 @@ def do_replace_cli(source):
         password = url.password
         host = url.hostname
         port = url.port
+        connection = psycopg2.connect(
+            host=host, database=database, user=user, password=password, port=port
+        )
     except:
         host = os.getenv("DB_WRITE_ENDPOINT", "localhost")
         database = os.getenv("DB_NAME", "digital_land")
         user = os.getenv("DB_USER_NAME", "postgres")
         password = os.getenv("DB_PASSWORD", "postgres")
         port = 5432
+        connection = psycopg2.connect(
+            host=host, database=database, user=user, password=password, port=port
+        )
 
-    return do_replace(source, host, database, user, password, port)
-
-
-def do_replace(source, host, database, user, password, port):
-    tables_to_export = export_tables[source]
-
-    connection = psycopg2.connect(
-        host=host, database=database, user=user, password=password, port=port
-    )
     connection.autocommit = False
 
     for table in tables_to_export:

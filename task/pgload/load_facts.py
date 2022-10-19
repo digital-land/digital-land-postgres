@@ -18,21 +18,6 @@ formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(messag
 streamHandler.setFormatter(formatter)
 logger.addHandler(streamHandler)
 
-try:
-    url = urlparse.urlparse(os.getenv('WRITE_DATABASE_URL'))
-    database = url.path[1:]
-    user = url.username
-    password = url.password
-    host = url.hostname
-    port = url.port
-except:
-    host = os.getenv("DB_WRITE_ENDPOINT", "localhost")
-    database = os.getenv("DB_NAME", "digital_land")
-    user = os.getenv("DB_USER_NAME", "postgres")
-    password = os.getenv("DB_PASSWORD", "postgres")
-    port = 5432
-
-
 datasette_url = "https://datasette.digital-land.info/{dataset}/fact.json?_shape=objects&_labels=off&_size=max"
 
 
@@ -40,9 +25,25 @@ datasette_url = "https://datasette.digital-land.info/{dataset}/fact.json?_shape=
 def load_facts():
     logger.info("Load facts")
 
-    connection = psycopg2.connect(
-        host=host, database=database, user=user, password=password, port=port
-    )
+    try:
+        url = urlparse.urlparse(os.getenv('WRITE_DATABASE_URL'))
+        database = url.path[1:]
+        user = url.username
+        password = url.password
+        host = url.hostname
+        port = url.port
+        connection = psycopg2.connect(
+            host=host, database=database, user=user, password=password, port=port
+        )
+    except:
+        host = os.getenv("DB_WRITE_ENDPOINT", "localhost")
+        database = os.getenv("DB_NAME", "digital_land")
+        user = os.getenv("DB_USER_NAME", "postgres")
+        password = os.getenv("DB_PASSWORD", "postgres")
+        port = 5432
+        connection = psycopg2.connect(
+            host=host, database=database, user=user, password=password, port=port
+        )
 
     with connection.cursor() as cursor:
         cursor.execute(
@@ -73,7 +74,6 @@ def load_facts():
 
 
 def load_facts_into_postgres(rows):
-
     for row in rows:
         for key, val in row.items():
             if not val:
@@ -100,7 +100,6 @@ def load_facts_into_postgres(rows):
 
 
 def load_facts_by_collection(collection, datasets):
-
     for dataset in datasets:
         logger.info(f"loading facts from collection: {collection} dataset: {dataset}")
         url = datasette_url.format(dataset=dataset)
