@@ -7,11 +7,10 @@ DATABASE_NAME=${DATABASE%.*}
 
 if ! [ -f $DATABASE_NAME.sqlite3 ]; then
   echo "$EVENT_ID: attempting download from $COLLECTION_DATA_URL/$S3_KEY"
-  if [[ $(curl -sI $COLLECTION_DATA_URL/$S3_KEY | grep "200 OK") == *200* ]]; then
-    curl -sO $COLLECTION_DATA_URL/$S3_KEY || echo "$EVENT_ID: failed to download from $COLLECTION_DATA_URL/$S3_KEY"
-  else
-    echo "$EVENT_ID: failed to download from $COLLECTION_DATA_URL/$S3_KEY"
-  fi
+  aws s3api get-object --bucket $S3_BUCKET --key $S3_KEY $DATABASE_NAME.sqlite3 || \
+    echo "$EVENT_ID: failed to download from s3://$S3_BUCKET/$S3_KEY" && exit 1
+
+  echo "$EVENT_ID: finished downloading from s3://$S3_BUCKET/$S3_KEY"
 fi
 
 echo "$EVENT_ID: exporting $DATABASE"
