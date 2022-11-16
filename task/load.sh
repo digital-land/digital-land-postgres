@@ -7,7 +7,7 @@ echo "$EVENT_ID: running with settings: S3_BUCKET=$S3_BUCKET, S3_KEY=$S3_KEY, DA
 
 if ! [ -f "$DATABASE_NAME.sqlite3" ]; then
   echo "$EVENT_ID: attempting download from s3://$S3_BUCKET/$S3_KEY"
-  aws s3api get-object --bucket "$S3_BUCKET" --key "$S3_KEY" "$DATABASE_NAME.sqlite3" || \
+  aws s3api get-object --bucket "$S3_BUCKET" --key "$S3_KEY" "$DATABASE_NAME.sqlite3" > /dev/null || \
     echo "$EVENT_ID: failed to download from s3://$S3_BUCKET/$S3_KEY" && exit 1
 
   echo "$EVENT_ID: finished downloading from s3://$S3_BUCKET/$S3_KEY"
