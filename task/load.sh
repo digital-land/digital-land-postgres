@@ -5,6 +5,11 @@ DATABASE_NAME=${DATABASE%.*}
 
 echo "$EVENT_ID: running with settings: S3_BUCKET=$S3_BUCKET, S3_KEY=$S3_KEY, DATABASE=$DATABASE, DATABASE_NAME=$DATABASE_NAME"
 
+if [[ $DATABASE_NAME != "entity" && $DATABASE_NAME != "digital-land" ]]; then
+  echo "$EVENT_ID: wrong database, skipping"
+  exit 1
+fi
+
 if ! [ -f "$DATABASE_NAME.sqlite3" ]; then
   echo "$EVENT_ID: attempting download from s3://$S3_BUCKET/$S3_KEY"
   aws s3api get-object --bucket "$S3_BUCKET" --key "$S3_KEY" "$DATABASE_NAME.sqlite3" > /dev/null
