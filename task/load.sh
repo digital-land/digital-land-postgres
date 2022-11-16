@@ -48,6 +48,6 @@ fi
 
 echo "$EVENT_ID: loading data into postgres"
 python3 -m pgload.load --source="$DATABASE_NAME" || \
-  echo "$EVENT_ID: failed to load $DATABASE" && exit 1
+  (echo "$EVENT_ID: failed to load $DATABASE" && exit 1)
 
 echo "$EVENT_ID: loading of $DATABASE_NAME completed successfully"
