@@ -7,6 +7,11 @@ on:
   pull_request:
     branches:
       - feat/new-infrastructure
+  workflow_dispatch:
+    inputs:
+      environment:
+        type: environment
+        description: The environment to deploy to.
 
 jobs:
   detect-environments:
@@ -20,6 +25,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           result-encoding: json
           script: |
+            if (context.payload?.inputs?.environment) return [context.payload?.inputs?.environment];
             const {data: {environments}} = 
               await github.request(`GET /repos/${process.env.GITHUB_REPOSITORY}/environments`);
             return environments.map(e => e.name)
