@@ -23,8 +23,28 @@ if ! [ -f "$DATABASE_NAME.sqlite3" ]; then
 fi
 
 echo "$EVENT_ID: extracting data from $DATABASE"
-sqlite3 "$DATABASE" ".read sql/export_$DATABASE_NAME.sql" || \
-  echo "$EVENT_ID: failed to extract data from $DATABASE" && exit 1
+sqlite3 "$DATABASE" ".read sql/export_$DATABASE_NAME.sql"
+
+if [[ $DATABASE_NAME == "entity" ]]; then
+  if ! [ -f exported_entity.csv ] || ! [ -f exported_old_entity.csv ]; then
+    echo "$EVENT_ID: failed to extract data from $DATABASE"
+    exit 1
+  fi
+fi
+
+if [[ $DATABASE_NAME == "digital-land" ]]; then
+  if ! [ -f exported_entity.csv ] \
+  || ! [ -f exported_organisation.csv ] \
+  || ! [ -f exported_typology.csv ] \
+  || ! [ -f exported_dataset_collection.csv ] \
+  || ! [ -f exported_dataset_publication.csv ] \
+  || ! [ -f exported_lookup.csv ] \
+  || ! [ -f exported_attribution.csv ] \
+  || ! [ -f exported_licence.csv ]; then
+    echo "$EVENT_ID: failed to extract data from $DATABASE"
+    exit 1
+  fi
+fi
 
 echo "$EVENT_ID: loading data into postgres"
 python3 -m pgload.load --source="$DATABASE_NAME" || \
