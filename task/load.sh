@@ -33,18 +33,20 @@ if [[ $DATABASE_NAME == "entity" ]]; then
 fi
 
 if [[ $DATABASE_NAME == "digital-land" ]]; then
-  if ! [ -f exported_entity.csv ] \
-  || ! [ -f exported_organisation.csv ] \
-  || ! [ -f exported_typology.csv ] \
+  if ! [ -f exported_attribution.csv ] \
+  || ! [ -f exported_dataset.csv ] \
   || ! [ -f exported_dataset_collection.csv ] \
   || ! [ -f exported_dataset_publication.csv ] \
+  || ! [ -f exported_licence.csv ] \
   || ! [ -f exported_lookup.csv ] \
-  || ! [ -f exported_attribution.csv ] \
-  || ! [ -f exported_licence.csv ]; then
+  || ! [ -f exported_organisation.csv ] \
+  || ! [ -f exported_typology.csv ]; then
     echo "$EVENT_ID: failed to extract data from $DATABASE"
     exit 1
   fi
 fi
+
+echo "$EVENT_ID: successfully extracted data from $DATABASE"
 
 echo "$EVENT_ID: loading data into postgres"
 python3 -m pgload.load --source="$DATABASE_NAME" || \
