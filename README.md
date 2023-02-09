@@ -50,15 +50,15 @@ cd into the task directory and run:
 
 3. **Run the load script in task directory to load digital-land**
 
-Remember the .env file is already set to load the digital-land db
+Remember the .env file is already set to load the digital-land db. However in order to load the db without using an aws account sign in you will need to use a different script
    
-    ./load.sh
+    ./load_local.sh
    
 6. **Run the load script to load entity database**
    
 Update the S3_KEY in the .env file to S3_KEY=entity-builder/dataset/entity.sqlite3
 
-    ./load.sh
+    ./load_local.sh
    
 You'll notice that the load script downloads sqlite databases and creates csv files in the directory it runs from. These
 files are git and docker ignored, so once done loading you can delete. It's a dumb script so each time you run it 
