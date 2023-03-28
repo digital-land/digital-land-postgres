@@ -13,6 +13,7 @@ from pgload.sql import SQL
 
 csv.field_size_limit(sys.maxsize)
 
+DATABASE_NAME = os.getenv('DATABASE_NAME')
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 streamHandler = logging.StreamHandler(sys.stdout)
@@ -21,7 +22,7 @@ streamHandler.setFormatter(formatter)
 logger.addHandler(streamHandler)
 
 export_tables = {
-    "entity": ["entity", "old_entity"],
+    DATABASE_NAME: ["entity", "old_entity"],
     "digital-land": [
         "dataset",
         "typology",
@@ -70,23 +71,37 @@ def do_replace(source):
         logger.info(f"Loading from database: {source} table: {table}")
 
         csv_filename = f"exported_{table}.csv"
+        
         with open(csv_filename, "r") as f:
             reader = csv.DictReader(f, delimiter="|")
             fieldnames = reader.fieldnames
+           
+        sql = SQL(table=table, fields=fieldnames, source=source)
 
-        sql = SQL(table=table, fields=fieldnames)
-
+      
         with connection.cursor() as cursor:
-            cursor.execute(sql.clone_table())
-            with open(csv_filename) as f:
-                cursor.copy_expert(sql.copy(), f)
-            cursor.execute(sql.rename_tables())
-            cursor.execute(sql.drop_clone_table())
+            if fieldnames is not None:
+                if source == 'digital-land':
+                    cursor.execute(sql.clone_table())
+                    with open(csv_filename) as f:
+                        cursor.copy_expert(sql.copy(), f)
+                    cursor.execute(sql.rename_tables())
+                    cursor.execute(sql.drop_clone_table())
+                elif source != 'entity':
+                    cursor.execute(sql.update_tables())
+                    with open(csv_filename) as f:
+                        cursor.copy_expert(sql.copy_entity(), f)
+            else:
+                logger.info(f"No data found in database: {source} table: {table}")
+
+
+
+
         connection.commit()
 
         logger.info(f"Finished loading from database: {source} table: {table}")
 
-        if source == "entity" and table == "entity":
+        if source != "entity" and table == "entity":
             make_valid_multipolygon = """
                 UPDATE entity set geometry = ST_MakeValid(geometry)
                 WHERE geometry IS NOT NULL AND NOT ST_IsValid(geometry)
