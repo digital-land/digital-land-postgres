@@ -42,8 +42,9 @@ def do_replace_cli(source):
     return do_replace(source)
 
 
-def do_replace(source):
-    tables_to_export = export_tables[source]
+def do_replace(source,tables_to_export=None):
+    if tables_to_export==None:
+        tables_to_export = export_tables[source]
 
     try:
         url = urlparse.urlparse(os.getenv('WRITE_DATABASE_URL'))
