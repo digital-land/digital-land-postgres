@@ -11,7 +11,7 @@ import click
 
 from pgload.sql import SQL
 
-csv.field_size_limit(sys.maxsize)
+#csv.field_size_limit(sys.maxsize)
 
 DATABASE_NAME = os.getenv('DATABASE_NAME')
 logger = logging.getLogger(__name__)
@@ -94,8 +94,6 @@ def do_replace(source,tables_to_export=None):
                         cursor.copy_expert(sql.copy_entity(), f)
             else:
                 logger.info(f"No data found in database: {source} table: {table}")
-
-
 
 
         connection.commit()

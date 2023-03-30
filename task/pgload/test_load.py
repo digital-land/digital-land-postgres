@@ -1,60 +1,75 @@
-import logging
 import os
-import sys
 import pytest
 import psycopg2
-from pgload.load import do_replace,export_tables
+from pgload.load import do_replace
+from pgload.sql import SQL
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
-streamHandler = logging.StreamHandler(sys.stdout)
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-streamHandler.setFormatter(formatter)
-logger.addHandler(streamHandler)
+host = 'localhost'
+database = 'digital_land'
+user = 'postgres'
+password = 'postgres'
+port = 5432
+    
+conn = psycopg2.connect(host=host, database=database, user=user, password=password, port=port)
 
 def test_connect():
-    host = 'localhost'
-    database = 'digital_land'
-    user = 'postgres'
-    password = 'postgres'
-    port = 5432
-    
-    conn = psycopg2.connect(
-        host=host, database=database, user=user, password=password, port=port
-    )
-    
     assert conn.status == psycopg2.extensions.STATUS_READY
-    conn.close()
-
 
 @pytest.fixture(scope="module")
 def source():
-    return "article-4-direction.sqlite3"
+    return "article-4-direction"
 
-def test_csv_files_created(source):
-    
-    def create_fileName_for_table(table):
-        return f"exported_{table}.csv"
+def test_do_replace(source):
     
     # arrange
-    os.putenv('DATABASE_NAME',source)
     tables_to_export = ["entity", "old_entity"]
-    
-    #do_replace(source)
-    for table in tables_to_export:
-        csv_filename=create_fileName_for_table(table)
-        # if os.path.isfile(csv_filename):
-        #     os.remove(csv_filename)
 
-    print("tables : ",tables_to_export)
-    
     # act do_replace
     do_replace(source,tables_to_export)
     
     # assert
     for table in tables_to_export:
-        csv_filename=create_fileName_for_table(table)
+        csv_filename=f"exported_{table}.csv"
         assert os.path.isfile(csv_filename), f"file does not exists:{csv_filename}"
         
-        
-        
+        sql_file = SQL('entity', ['col1', 'col2'], 'mydata')
+
+        assert sql_file.update_tables() == f"""
+            DELETE FROM entity WHERE dataset = 'mydata';
+        """
+        assert sql_file.copy_entity() ==f"""
+            COPY entity (
+                {",".join(['col1', 'col2'])}
+            ) FROM STDIN WITH (
+                FORMAT CSV,
+                HEADER,
+                DELIMITER '|',
+                FORCE_NULL(
+                    {",".join(['col1', 'col2'])}
+                )
+            );
+        """
+        with conn.cursor() as cursor:
+
+            #make_valid_multipolygon
+            cursor.execute("""
+            SELECT COUNT(*) FROM entity
+            WHERE geometry IS NOT NULL AND NOT ST_IsValid(geometry)
+            AND ST_GeometryType(ST_MakeValid(geometry)) = 'ST_MultiPolygon';
+            """)
+            rowcount = cursor.fetchone()[0]
+            assert rowcount == 0
+
+            #make_valid_with_handle_geometry_collection
+            cursor.execute("""
+            SELECT COUNT(*) FROM entity
+            WHERE geometry IS NOT NULL AND NOT ST_IsValid(geometry)
+                AND ST_GeometryType(ST_MakeValid(geometry)) = 'ST_GeometryCollection';
+            """)
+            rowcount = cursor.fetchone()[0]
+            assert rowcount == 0
+
+
+
+
+
