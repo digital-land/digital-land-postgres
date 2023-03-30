@@ -2,7 +2,7 @@ name: Deploy
 
 on:
   push:
-    branches: [main]
+    branches: [main,setup-test-workflow]
   workflow_dispatch:
     inputs:
       environment:
@@ -10,6 +10,19 @@ on:
         description: The environment to deploy to.
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.8
+      - run: make init
+      - run: make lint
+  
+
   detect-environments:
     runs-on: ubuntu-latest
     outputs:
