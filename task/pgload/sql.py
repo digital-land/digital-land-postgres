@@ -4,7 +4,9 @@ class SQL:
         self.fields = fields
         self.source = source
         if self.fields is not None:
-            self.non_key_fields = [field for field in self.fields if field != self.table]
+            self.non_key_fields = [
+                field for field in self.fields if field != self.table
+            ]
 
     def clone_table(self):
         return f"CREATE TABLE {self.table}__new (LIKE {self.table} INCLUDING ALL);"
@@ -22,7 +24,7 @@ class SQL:
                 )
             );
         """
-    
+
     def copy_entity(self):
         return f"""
             COPY {self.table} (
@@ -42,7 +44,7 @@ class SQL:
             ALTER TABLE {self.table} RENAME TO {self.table}__old;
             ALTER TABLE {self.table}__new RENAME TO {self.table};
         """
-    
+
     def update_tables(self):
         return f"""
             DELETE FROM {self.table} WHERE dataset = '{self.source}';
