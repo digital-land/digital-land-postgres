@@ -27,6 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       environments: ${{ steps.environments.outputs.result }}
+    needs: [lint]
     steps:
       - uses: actions/github-script@v6
         id: environments
