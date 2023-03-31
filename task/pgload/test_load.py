@@ -84,7 +84,7 @@ def test_postgres(postgresql):
             cur.execute("INSERT INTO entity (entity, name, entry_date, start_date, end_date, dataset, json, organisation_entity, prefix, reference, typology, geometry, point) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", row)
 
     postgresql.commit()
-    cur.execute("SELECT * FROM entity limit 11")
+    cur.execute("SELECT count(*) FROM entity")
     result = cur.fetchone()
     print(result)  
     assert len(result)>0
