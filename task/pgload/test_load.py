@@ -17,7 +17,6 @@ def test_connect():
     assert conn.status == psycopg2.extensions.STATUS_READY
 
 
-
 @pytest.fixture(scope="module")
 def source():
     return "article-4-direction"
@@ -88,28 +87,7 @@ def test_postgres(postgresql):
     cur.execute("SELECT * FROM entity limit 11")
     result = cur.fetchone()
     print(result)  
-    assert len(result)<0
+    assert len(result)>0
     cur.close()
 
-    #cur.execute("INSERT INTO entity (id, name) VALUES (1, 'John')")
-    # assert result == (1, 'John')
-    # postgresql.commit()
-    
-
-# postgresql = factories.postgresql()
-
-# # @pytest.fixture(scope='session')
-# # def postgresql_database(postgresql):
-# #     return postgresql
-
-# def test_insert_data(postgresql):
-#     conn = psycopg2.connect(**postgresql_database.dsn())
-#     cur = conn.cursor()
-#     cur.execute("INSERT INTO entity (id, name) VALUES (1, 'John')")
-#     conn.commit()
-#     cur.execute("SELECT * FROM entity")
-#     result = cur.fetchone()
-#     assert result == (1, 'John')
-#     cur.close()
-#     conn.close()
-
+   
