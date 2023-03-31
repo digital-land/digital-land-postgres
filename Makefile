@@ -7,5 +7,5 @@ init::
 	python -m pip install pathspec
 	python -m pip install platformdirs
 	python -m pip install typing-extensions
-	python -m piptools sync task/requirements.txt
+	python -m piptools sync task/dev-requirements.txt
 	
