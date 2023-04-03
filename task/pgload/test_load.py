@@ -84,7 +84,7 @@ def test_postgres(postgresql):
    
     cur.execute("CREATE TABLE entity (entity bigint,name varchar, geometry varchar null,point varchar)")
     
-    with open('entities.csv', 'r') as f:
+    with open('pgload/test_data/entities.testcsv', 'r') as f:
       
         reader = csv.reader(f,delimiter='|')
         next(reader)  

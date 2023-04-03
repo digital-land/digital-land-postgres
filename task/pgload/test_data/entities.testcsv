@@ -1,0 +1,3 @@
+entity|name|geometry|point
+10|Valid multipolygon|POLYGON ((20 180, 180 180, 180 20, 20 20, 20 180))|POINT (-2.764263153076172 52.92416947690202)
+11|Invalid multipolygon|POLYGON((0 0, 1 1, 1 2, 1 1, 0 0))|POINT (-2.764263153076172 52.92416947690202)
