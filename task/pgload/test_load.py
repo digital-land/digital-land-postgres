@@ -1,9 +1,11 @@
 import csv
 import os
-import pytest
+import pytest 
 import psycopg2
 from pgload.load import do_replace
 from pgload.sql import SQL
+#from pytest_postgresql import factories
+
 
 host = 'localhost'
 database = 'digital_land'
@@ -71,23 +73,51 @@ def test_do_replace(source):
             rowcount = cursor.fetchone()[0]
             assert rowcount == 0
 
+# postgresql_my_proc = factories.postgresql_proc(
+#     port=None, unixsocketdir='/var/run')
+# postgresql_my = factories.postgresql('postgresql_my_proc')
+
 def test_postgres(postgresql):
 
     cur = postgresql.cursor()
-    cur.execute("CREATE TABLE entity (entity bigint,name varchar,entry_date varchar,start_date varchar,end_date varchar,dataset varchar,json varchar,organisation_entity varchar,prefix varchar,reference varchar,typology varchar,geometry varchar,point varchar)")
+    cur.execute("CREATE EXTENSION postgis")
+   
+    cur.execute("CREATE TABLE entity (entity bigint,name varchar, geometry varchar null,point varchar)")
     
     with open('entities.csv', 'r') as f:
       
         reader = csv.reader(f,delimiter='|')
         next(reader)  
         for row in reader:
-            cur.execute("INSERT INTO entity (entity, name, entry_date, start_date, end_date, dataset, json, organisation_entity, prefix, reference, typology, geometry, point) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", row)
+            cur.execute("INSERT INTO entity (entity, name, geometry, point) VALUES (%s, %s, %s, %s)", row)
+    
+    cur.execute("""SELECT COUNT(*) AS Invalid_count FROM entity WHERE geometry!='' 
+                AND NOT ST_IsValid(ST_GeomFromText(geometry));""") 
+                #AND ST_GeometryType(ST_MakeValid(ST_GeomFromText(geometry))) = 'ST_GeometryCollection';""")
+    
+    invalid_lines_count = cur.fetchone()[0]
+    print("Invalid lines before fixes",invalid_lines_count)
+    assert invalid_lines_count>0
+
+    cur.execute("""UPDATE entity set geometry = ST_MakeValid(ST_GeomFromText(geometry)) 
+                WHERE geometry!='' AND NOT ST_IsValid(ST_GeomFromText(geometry)) 
+                AND ST_GeometryType(ST_MakeValid(ST_GeomFromText(geometry))) = 'ST_MultiPolygon';""")
+    
+    cur.execute("""SELECT COUNT(*) FROM entity WHERE geometry!='' 
+                AND NOT ST_IsValid(ST_GeomFromText(geometry)) 
+                AND ST_GeometryType(ST_MakeValid(ST_GeomFromText(geometry))) = 'ST_GeometryCollection';""")
+
+    invalid_lines_fixed = cur.fetchone()[0]
+    print("Invalid lines after fixes",invalid_lines_fixed)
+    assert invalid_lines_fixed==0
 
     postgresql.commit()
-    cur.execute("SELECT count(*) FROM entity")
-    result = cur.fetchone()
-    print(result)  
-    assert len(result)>0
-    cur.close()
 
+    cur.close()
+    
+    
+    
+    
    
+   
+
