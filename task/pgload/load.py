@@ -13,7 +13,7 @@ from pgload.sql import SQL
 
 csv.field_size_limit(sys.maxsize)
 
-DATABASE_NAME = os.getenv('DATABASE_NAME')
+DATABASE_NAME = os.getenv("DATABASE_NAME")
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 streamHandler = logging.StreamHandler(sys.stdout)
@@ -46,7 +46,7 @@ def do_replace(source):
     tables_to_export = export_tables[source]
 
     try:
-        url = urlparse.urlparse(os.getenv('WRITE_DATABASE_URL'))
+        url = urlparse.urlparse(os.getenv("WRITE_DATABASE_URL"))
         database = url.path[1:]
         user = url.username
         password = url.password
@@ -71,31 +71,27 @@ def do_replace(source):
         logger.info(f"Loading from database: {source} table: {table}")
 
         csv_filename = f"exported_{table}.csv"
-        
+
         with open(csv_filename, "r") as f:
             reader = csv.DictReader(f, delimiter="|")
             fieldnames = reader.fieldnames
-           
+
         sql = SQL(table=table, fields=fieldnames, source=source)
 
-      
         with connection.cursor() as cursor:
             if fieldnames is not None:
-                if source == 'digital-land':
+                if source == "digital-land":
                     cursor.execute(sql.clone_table())
                     with open(csv_filename) as f:
                         cursor.copy_expert(sql.copy(), f)
                     cursor.execute(sql.rename_tables())
                     cursor.execute(sql.drop_clone_table())
-                elif source != 'entity':
+                elif source != "entity":
                     cursor.execute(sql.update_tables())
                     with open(csv_filename) as f:
                         cursor.copy_expert(sql.copy_entity(), f)
             else:
                 logger.info(f"No data found in database: {source} table: {table}")
-
-
-
 
         connection.commit()
 
