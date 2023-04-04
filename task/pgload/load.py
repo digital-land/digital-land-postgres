@@ -101,31 +101,40 @@ def do_replace(source,tables_to_export=None):
         logger.info(f"Finished loading from database: {source} table: {table}")
 
         if source != "entity" and table == "entity":
-            make_valid_multipolygon = """
+            make_valid_multipolygon(connection)
+
+            make_valid_with_handle_geometry_collection(connection)
+
+
+def make_valid_multipolygon(connection):
+
+    make_valid_multipolygon = """
                 UPDATE entity set geometry = ST_MakeValid(geometry)
                 WHERE geometry IS NOT NULL AND NOT ST_IsValid(geometry)
                 AND ST_GeometryType(ST_MakeValid(geometry)) = 'ST_MultiPolygon';
                 """.strip()
 
-            with connection.cursor() as cursor:
-                cursor.execute(make_valid_multipolygon)
-                rowcount = cursor.rowcount
-                connection.commit()
+    with connection.cursor() as cursor:
+        cursor.execute(make_valid_multipolygon)
+        rowcount = cursor.rowcount
+        connection.commit()
 
-            logger.info(f"Updated {rowcount} rows with valid multi polygons")
+    logger.info(f"Updated {rowcount} rows with valid multi polygons")
 
-            make_valid_with_handle_geometry_collection = """
+def make_valid_with_handle_geometry_collection(connection):
+    
+    make_valid_with_handle_geometry_collection = """
                 UPDATE entity SET geometry = ST_CollectionExtract(ST_MakeValid(geometry))
                 WHERE geometry IS NOT NULL AND NOT ST_IsValid(geometry)
                 AND ST_GeometryType(ST_MakeValid(geometry)) = 'ST_GeometryCollection';
                 """.strip()
 
-            with connection.cursor() as cursor:
-                cursor.execute(make_valid_with_handle_geometry_collection)
-                rowcount = cursor.rowcount
-                connection.commit()
+    with connection.cursor() as cursor:
+        cursor.execute(make_valid_with_handle_geometry_collection)
+        rowcount = cursor.rowcount
+        connection.commit()
 
-            logger.info(
+    logger.info(
                 f"Updated {rowcount} rows with valid geometry collections converted to multi polygons"
             )
 

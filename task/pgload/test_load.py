@@ -2,10 +2,8 @@ import csv
 import os
 import pytest 
 import psycopg2
-from pgload.load import do_replace
+from pgload.load import do_replace,make_valid_multipolygon,make_valid_with_handle_geometry_collection
 from pgload.sql import SQL
-#from pytest_postgresql import factories
-
 
 host = 'localhost'
 database = 'digital_land'
@@ -18,11 +16,32 @@ conn = psycopg2.connect(host=host, database=database, user=user, password=passwo
 def test_connect():
     assert conn.status == psycopg2.extensions.STATUS_READY
 
-
+#fixture to set source
 @pytest.fixture(scope="module")
 def source():
     return "article-4-direction"
 
+#function to check if invalid data is updated correctly
+def multipolygon_check(cursor):
+    cursor.execute("""
+            SELECT COUNT(*) FROM entity
+            WHERE geometry IS NOT NULL AND NOT ST_IsValid(geometry)
+            AND ST_GeometryType(ST_MakeValid(geometry)) = 'ST_MultiPolygon';
+            """)
+    rowcount = cursor.fetchone()[0]
+    assert rowcount == 0
+
+#function to check if invalid data is updated correctly
+def handle_geometry_collection_check(cursor):
+    cursor.execute("""
+            SELECT COUNT(*) FROM entity
+            WHERE geometry IS NOT NULL AND NOT ST_IsValid(geometry)
+            AND ST_GeometryType(ST_MakeValid(geometry)) = 'ST_GeometryCollection';
+            """)
+    rowcount = cursor.fetchone()[0]
+    assert rowcount == 0
+
+#integration test for do_replace function
 def test_do_replace(source):
     
     # arrange
@@ -55,69 +74,44 @@ def test_do_replace(source):
         """
         with conn.cursor() as cursor:
 
-            #make_valid_multipolygon
-            cursor.execute("""
-            SELECT COUNT(*) FROM entity
-            WHERE geometry IS NOT NULL AND NOT ST_IsValid(geometry)
-            AND ST_GeometryType(ST_MakeValid(geometry)) = 'ST_MultiPolygon';
-            """)
-            rowcount = cursor.fetchone()[0]
-            assert rowcount == 0
+            multipolygon_check(cursor)
+            handle_geometry_collection_check(cursor)
 
-            #make_valid_with_handle_geometry_collection
-            cursor.execute("""
-            SELECT COUNT(*) FROM entity
-            WHERE geometry IS NOT NULL AND NOT ST_IsValid(geometry)
-                AND ST_GeometryType(ST_MakeValid(geometry)) = 'ST_GeometryCollection';
-            """)
-            rowcount = cursor.fetchone()[0]
-            assert rowcount == 0
-
-# postgresql_my_proc = factories.postgresql_proc(
-#     port=None, unixsocketdir='/var/run')
-# postgresql_my = factories.postgresql('postgresql_my_proc')
-
-def test_postgres(postgresql):
-
-    cur = postgresql.cursor()
-    cur.execute("CREATE EXTENSION postgis")
+#Initialises PostgreSQL database, creates and inserts data in a new table called entity
+@pytest.fixture
+def postgresql_connection(postgresql):
+    cursor = postgresql.cursor()
+    cursor.execute("CREATE EXTENSION postgis")
    
-    cur.execute("CREATE TABLE entity (entity bigint,name varchar, geometry varchar null,point varchar)")
+    cursor.execute("CREATE TABLE entity (entity bigint,name varchar, geometry geometry null,point varchar)")
     
     with open('pgload/test_data/entities.testcsv', 'r') as f:
       
         reader = csv.reader(f,delimiter='|')
         next(reader)  
         for row in reader:
-            cur.execute("INSERT INTO entity (entity, name, geometry, point) VALUES (%s, %s, %s, %s)", row)
-    
-    cur.execute("""SELECT COUNT(*) AS Invalid_count FROM entity WHERE geometry!='' 
-                AND NOT ST_IsValid(ST_GeomFromText(geometry));""") 
-                #AND ST_GeometryType(ST_MakeValid(ST_GeomFromText(geometry))) = 'ST_GeometryCollection';""")
-    
-    invalid_lines_count = cur.fetchone()[0]
-    print("Invalid lines before fixes",invalid_lines_count)
-    assert invalid_lines_count>0
-
-    cur.execute("""UPDATE entity set geometry = ST_MakeValid(ST_GeomFromText(geometry)) 
-                WHERE geometry!='' AND NOT ST_IsValid(ST_GeomFromText(geometry)) 
-                AND ST_GeometryType(ST_MakeValid(ST_GeomFromText(geometry))) = 'ST_MultiPolygon';""")
-    
-    cur.execute("""SELECT COUNT(*) FROM entity WHERE geometry!='' 
-                AND NOT ST_IsValid(ST_GeomFromText(geometry)) 
-                AND ST_GeometryType(ST_MakeValid(ST_GeomFromText(geometry))) = 'ST_GeometryCollection';""")
-
-    invalid_lines_fixed = cur.fetchone()[0]
-    print("Invalid lines after fixes",invalid_lines_fixed)
-    assert invalid_lines_fixed==0
-
+            cursor.execute("INSERT INTO entity (entity, name, geometry, point) VALUES (%s, %s, %s, %s)", row)
     postgresql.commit()
+    cursor.close()
+    return postgresql
 
-    cur.close()
-    
-    
-    
-    
-   
-   
 
+def test_make_valid_multipolygon(postgresql_connection):
+
+    cursor = postgresql_connection.cursor()
+    make_valid_multipolygon(postgresql_connection)
+
+    multipolygon_check(cursor)
+
+    postgresql_connection.commit()
+    cursor.close()
+    
+def test_make_valid_with_handle_geometry_collection(postgresql_connection):
+
+    cursor = postgresql_connection.cursor()
+    make_valid_with_handle_geometry_collection(postgresql_connection)
+    
+    handle_geometry_collection_check(cursor)
+
+    postgresql_connection.commit()
+    cursor.close()
