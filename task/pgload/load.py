@@ -42,9 +42,9 @@ def do_replace_cli(source):
     return do_replace(source)
 
 
-def do_replace(source,tables_to_export=None):
-    if tables_to_export==None:
-        tables_to_export = export_tables[source]
+def do_replace(source):
+
+    tables_to_export = export_tables[source]
 
     try:
         url = urlparse.urlparse(os.getenv("WRITE_DATABASE_URL"))
@@ -80,19 +80,7 @@ def do_replace(source,tables_to_export=None):
         sql = SQL(table=table, fields=fieldnames, source=source)
 
         with connection.cursor() as cursor:
-            if fieldnames is not None:
-                if source == "digital-land":
-                    cursor.execute(sql.clone_table())
-                    with open(csv_filename) as f:
-                        cursor.copy_expert(sql.copy(), f)
-                    cursor.execute(sql.rename_tables())
-                    cursor.execute(sql.drop_clone_table())
-                elif source != "entity":
-                    cursor.execute(sql.update_tables())
-                    with open(csv_filename) as f:
-                        cursor.copy_expert(sql.copy_entity(), f)
-            else:
-                logger.info(f"No data found in database: {source} table: {table}")
+            call_sql_queries(source, table, csv_filename, fieldnames, sql, cursor)
 
         connection.commit()
 
@@ -102,6 +90,30 @@ def do_replace(source,tables_to_export=None):
             make_valid_multipolygon(connection)
 
             make_valid_with_handle_geometry_collection(connection)
+
+def call_sql_queries(source, table, csv_filename, fieldnames, sql, cursor):
+    if fieldnames is not None:
+        if source == "digital-land":
+            cursor.execute(sql.clone_table())
+            with open(csv_filename) as f:
+                cursor.copy_expert(sql.copy(), f)
+            cursor.execute(sql.rename_tables())
+            cursor.execute(sql.drop_clone_table())
+        elif source != "entity":
+            cursor.execute("select count(*) from entity")
+            row_count = cursor.fetchone()[0]
+            print("row count in entity table before delete",row_count)
+            cursor.execute(sql.update_tables())
+            cursor.execute("select count(*) from entity")
+            row_count = cursor.fetchone()[0]
+            print("row count in entity table after delete",row_count)
+            with open(csv_filename) as f:
+                cursor.copy_expert(sql.copy_entity(), f)
+            cursor.execute("select count(*) from entity")
+            row_count = cursor.fetchone()[0]
+            print("row count in entity table after insert again",row_count)
+    else:
+        logger.info(f"No data found in database: {source} table: {table}")
 
 def make_valid_multipolygon(connection):
     make_valid_multipolygon = """

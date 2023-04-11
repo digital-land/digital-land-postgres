@@ -2,23 +2,33 @@ import csv
 import os
 import pytest 
 import psycopg2
-from task.pgload.load import do_replace,make_valid_multipolygon,make_valid_with_handle_geometry_collection,SQL
-
-host = 'localhost'
-database = 'digital_land'
-user = 'postgres'
-password = 'postgres'
-port = 5432
-    
-conn = psycopg2.connect(host=host, database=database, user=user, password=password, port=port)
-
-def test_connect():
-    assert conn.status == psycopg2.extensions.STATUS_READY
+from task.pgload.load import SQL,call_sql_queries,export_tables,make_valid_multipolygon,make_valid_with_handle_geometry_collection
 
 #fixture to set source
 @pytest.fixture(scope="module")
-def source():
-    return "article-4-direction"
+def sources():
+    data = ["article-4-direction"]
+    return data
+
+@pytest.fixture
+def postgresql_connection_doreplace(postgresql):
+    cursor = postgresql.cursor()
+    cursor.execute("CREATE EXTENSION postgis")
+    cursor.execute("CREATE TABLE entity (entity bigint,name varchar,entry_date varchar,start_date varchar,end_date varchar,dataset varchar,json varchar,organisation_entity varchar,prefix varchar,reference varchar,typology varchar,geojson varchar, geometry geometry null,point varchar)")
+    with open('tests/test_data/exported_entity.testcsv', 'r') as f:
+      
+        reader = csv.reader(f,delimiter='|')
+        next(reader)  
+        for row in reader:
+            cursor.execute("INSERT INTO entity (entity, name,entry_date,start_date,end_date,dataset,json,organisation_entity,prefix,reference,typology,geojson, geometry, point) VALUES (%s, %s, %s, %s,%s, %s, %s, %s,%s, %s, %s, %s,%s, %s)", row)
+    cursor.execute("""SELECT COUNT(*) from entity;""") 
+    
+    row_count = cursor.fetchone()[0]
+    print("row count in entity table",row_count)
+    #assert False
+    postgresql.commit()
+    cursor.close()
+    return postgresql
 
 #function to check if invalid data is updated correctly
 def multipolygon_check(cursor):
@@ -41,42 +51,31 @@ def handle_geometry_collection_check(cursor):
     assert rowcount == 0
 
 #integration test for do_replace function
-def test_do_replace(source):
-    
-    # arrange
-    tables_to_export = ["entity", "old_entity"]
+def test_do_replace(sources,postgresql_connection_doreplace):
 
-    # act do_replace
-    do_replace(source,tables_to_export)
-    
-    # assert
-    for table in tables_to_export:
-        csv_filename=f"exported_{table}.csv"
-        assert os.path.isfile(csv_filename), f"file does not exists:{csv_filename}"
+    for source in sources:
+        if source!='digital-land':
+            tables_to_export=["entity", "old_entity"]
+        else:
+            tables_to_export = export_tables[source]
+
+        for table in tables_to_export:
         
-        sql_file = SQL('entity', ['col1', 'col2'], 'mydata')
+            csv_filename = f"exported_{table}.testcsv"
 
-        assert sql_file.update_tables() == f"""
-            DELETE FROM entity WHERE dataset = 'mydata';
-        """
-        assert sql_file.copy_entity() ==f"""
-            COPY entity (
-                {",".join(['col1', 'col2'])}
-            ) FROM STDIN WITH (
-                FORMAT CSV,
-                HEADER,
-                DELIMITER '|',
-                FORCE_NULL(
-                    {",".join(['col1', 'col2'])}
-                )
-            );
-        """
-        with conn.cursor() as cursor:
+            with open("tests/test_data/"+csv_filename, "r") as f:
+                reader = csv.DictReader(f, delimiter="|")
+                fieldnames = reader.fieldnames
 
-            multipolygon_check(cursor)
-            handle_geometry_collection_check(cursor)
+            sql = SQL(table=table, fields=fieldnames, source=source)
+
+            with postgresql_connection_doreplace.cursor() as cursor:
+                call_sql_queries(source, table, "tests/test_data/"+csv_filename, fieldnames, sql, cursor)
+
+            postgresql_connection_doreplace.commit()
 
 #Initialises PostgreSQL database, creates and inserts data in a new table called entity
+
 @pytest.fixture
 def postgresql_connection(postgresql):
     cursor = postgresql.cursor()
@@ -84,7 +83,7 @@ def postgresql_connection(postgresql):
    
     cursor.execute("CREATE TABLE entity (entity bigint,name varchar, geometry geometry null,point varchar)")
     
-    with open('pgload/test_data/entities.testcsv', 'r') as f:
+    with open('tests/test_data/entities.testcsv', 'r') as f:
       
         reader = csv.reader(f,delimiter='|')
         next(reader)  
