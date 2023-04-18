@@ -36,7 +36,7 @@ class SQL:
                 FORCE_NULL(
                     {",".join(self.non_key_fields)}
                 )
-            );
+            ) WHERE dataset = '{self.source}';
         """
 
     def rename_tables(self):
