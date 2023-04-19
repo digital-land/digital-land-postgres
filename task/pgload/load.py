@@ -9,13 +9,13 @@ import urllib.parse as urlparse
 
 import click
 
-root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))
+root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../"))
 sys.path.append(root_dir)
 from pgload.sql import SQL
 
 csv.field_size_limit(sys.maxsize)
 
-DATABASE_NAME = os.getenv('DATABASE_NAME')
+DATABASE_NAME = os.getenv("DATABASE_NAME")
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 streamHandler = logging.StreamHandler(sys.stdout)
@@ -44,12 +44,12 @@ def do_replace_cli(source):
     return do_replace(source)
 
 
-def do_replace(source,tables_to_export=None):
-    if tables_to_export==None:
+def do_replace(source, tables_to_export=None):
+    if tables_to_export == None:
         tables_to_export = export_tables[source]
 
     try:
-        url = urlparse.urlparse(os.getenv('WRITE_DATABASE_URL'))
+        url = urlparse.urlparse(os.getenv("WRITE_DATABASE_URL"))
         database = url.path[1:]
         user = url.username
         password = url.password
@@ -74,17 +74,15 @@ def do_replace(source,tables_to_export=None):
         logger.info(f"Loading from database: {source} table: {table}")
 
         csv_filename = f"exported_{table}.csv"
-        
+
         with open(csv_filename, "r") as f:
             reader = csv.DictReader(f, delimiter="|")
             fieldnames = reader.fieldnames
-           
+
         sql = SQL(table=table, fields=fieldnames, source=source)
 
-      
         with connection.cursor() as cursor:
             call_sql_queries(source, table, csv_filename, fieldnames, sql, cursor)
-
 
         connection.commit()
 
@@ -95,30 +93,32 @@ def do_replace(source,tables_to_export=None):
 
             make_valid_with_handle_geometry_collection(connection)
 
+
 def call_sql_queries(source, table, csv_filename, fieldnames, sql, cursor):
     if fieldnames is not None:
-        if source == 'digital-land':
+        if source == "digital-land":
             cursor.execute(sql.clone_table())
             with open(csv_filename) as f:
                 cursor.copy_expert(sql.copy(), f)
             cursor.execute(sql.rename_tables())
             cursor.execute(sql.drop_clone_table())
-        elif source != 'entity':
-            cursor.execute("select count(*) from "+table)
+        elif source != "entity":
+            cursor.execute("select count(*) from " + table)
             row_count = cursor.fetchone()[0]
-            #print("row count in ", table," table before delete",row_count)
+            # print("row count in ", table," table before delete",row_count)
             cursor.execute(sql.update_tables())
             cursor.execute("select count(*) from entity")
             row_count = cursor.fetchone()[0]
-            #print("row count in ", table," table after delete",row_count)
+            # print("row count in ", table," table after delete",row_count)
             with open(csv_filename) as f:
-                 cursor.copy_expert(sql.copy_entity(), f)
+                cursor.copy_expert(sql.copy_entity(), f)
 
             cursor.execute("select count(*) from entity")
             row_count = cursor.fetchone()[0]
-            #print("row count in ", table," table after insert again",row_count)
+            # print("row count in ", table," table after insert again",row_count)
     else:
         logger.info(f"No data found in database: {source} table: {table}")
+
 
 def make_valid_with_handle_geometry_collection(connection):
     make_valid_with_handle_geometry_collection = """
@@ -133,8 +133,9 @@ def make_valid_with_handle_geometry_collection(connection):
         connection.commit()
 
     logger.info(
-                f"Updated {rowcount} rows with valid geometry collections converted to multi polygons"
-            )
+        f"Updated {rowcount} rows with valid geometry collections converted to multi polygons"
+    )
+
 
 def make_valid_multipolygon(connection):
     make_valid_multipolygon = """
