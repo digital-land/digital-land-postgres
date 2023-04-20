@@ -14,7 +14,7 @@ flake8:
 	flake8 .
 
 test-unit:
-	[ -d tests ] && python -m pytest tests
+	python -m pytest
 
 coverage:
 	coverage run --source $(PACKAGE) -m pytest && coverage report
