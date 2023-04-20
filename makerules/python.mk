@@ -13,16 +13,8 @@ black:
 flake8:
 	flake8 .
 
-test:: test-unit test-integration test-e2e
-
 test-unit:
-	[ -d tests/unit ] && python -m pytest tests/unit
-
-test-integration:
-	[ -d tests/integration ] && python -m pytest tests/integration
-
-test-e2e:
-	[ -d tests/e2e ] && python -m pytest tests/e2e
+	[ -d tests ] && python -m pytest tests
 
 coverage:
 	coverage run --source $(PACKAGE) -m pytest && coverage report
