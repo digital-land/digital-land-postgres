@@ -26,7 +26,7 @@ def load_facts():
     logger.info("Load facts")
 
     try:
-        url = urlparse.urlparse(os.getenv('WRITE_DATABASE_URL'))
+        url = urlparse.urlparse(os.getenv("WRITE_DATABASE_URL"))
         database = url.path[1:]
         user = url.username
         password = url.password

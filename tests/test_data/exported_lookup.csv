@@ -1,0 +1,6 @@
+id|entity|prefix|reference|entry_date|start_date|value
+1|16900000|contribution-funding-status|secured|||
+2|16900001|contribution-funding-status|received|||
+3|16900002|contribution-funding-status|allocated|||
+4|16900003|contribution-funding-status|transferred|||
+5|16900004|contribution-funding-status|spent|||

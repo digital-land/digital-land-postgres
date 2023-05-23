@@ -22,6 +22,7 @@ FROM entity e;
 
 .output exported_old_entity.csv
 
+
 SELECT
     oe.entity as entity,
     oe.old_entity as old_entity,
@@ -29,5 +30,6 @@ SELECT
     nullif(oe.start_date, "") as start_date,
     nullif(oe.end_date, "") as end_date,
     nullif(oe.status, "") as status,
-    nullif(oe.notes, "") as notes
+    nullif(oe.notes, "") as notes,
+    nullif('${DATABASE_NAME}', "") as dataset
 FROM old_entity oe;

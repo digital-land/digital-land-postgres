@@ -2,7 +2,6 @@ name: Deploy
 
 on:
   push:
-    branches: [main]
   workflow_dispatch:
     inputs:
       environment:
@@ -10,10 +9,64 @@ on:
         description: The environment to deploy to.
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.8
+      - run: make init
+      - run: make lint
+
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgis/postgis:14-master
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    env:
+      READ_DATABASE_URL: postgresql://postgres:postgres@localhost/digital_land_test
+      WRITE_DATABASE_URL: postgresql://postgres:postgres@localhost/digital_land_test
+      ENVIRONMENT: development
+      PGPASSWORD: postgres
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.8
+
+      - run: make init
+
+      - name: Setup database
+        run: |
+          psql -h localhost -c "CREATE DATABASE digital_land_test WITH TEMPLATE postgres" -U postgres
+
+      - name: Unit Tests
+        run: |
+          make test-unit
+          echo "## Unit Tests" >> $GITHUB_STEP_SUMMARY
+  
+  
   detect-environments:
     runs-on: ubuntu-latest
     outputs:
       environments: ${{ steps.environments.outputs.result }}
+    if: github.ref_name == 'main'
+    needs: [lint,test]
     steps:
       - uses: actions/github-script@v6
         id: environments
@@ -35,6 +88,7 @@ jobs:
       matrix:
         environment: ${{ fromJSON(needs.detect-environments.outputs.environments) }}
     environment: ${{ matrix.environment }}
+    if: github.ref_name == 'main'
     steps:
       - uses: actions/checkout@v3
 

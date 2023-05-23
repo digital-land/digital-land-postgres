@@ -1,0 +1,13 @@
+typology|name|description|entry_date|start_date|end_date|plural|text|wikidata|wikipedia
+category|Category|"category, type or other form of classification"||||Categories||Q2285707|Categorical_variable
+document|Document|"published document"||||Documents||Q49848|Document
+entity|Entity|"generic item"|||||||
+geography|Geography|"geographical boundary, extent, zone or other area with a geometry and a point"||||Geographies||Q1522257|Space#Geographical_space
+legal-instrument|"Legal instrument"|"legal text such as an order, licence, permit, title, contract, agreement, or notice"||||"Legal instruments"||Q3150005|Legal_instrument
+metric|Metric|"numerical measurement or target measurement"||||Metrics||Q657339|Software_metric
+organisation|Organisation|"department, agency, body, company, group, or association of people"||||Organisations||Q43229|Organization
+pipeline|Pipeline|"configuration needed by the data pipeline"|||||||
+policy|Policy|"principle or protocol to guide decisions and achieve an outcome"||||Policies||Q1156854|Policy
+specification|Specification|"description, configuration, requirements, and other metadata needed by the service"|||||||Specification_(technical_standard)
+timetable|Timetable|"times when events are intended to take place"||||Timetables||Q7271585|Schedule
+value|Value|"numeric, text, or other value"||||Values||Q1196827|Value_(computer_science)
