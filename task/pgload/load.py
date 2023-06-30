@@ -40,14 +40,22 @@ export_tables = {
     ],
 }
 
+
 def get_valid_datasets(specification):
-    valid_datasets = [dataset['dataset'] for dataset in specification.dataset.values() if dataset['collection']]
+    valid_datasets = [
+        dataset["dataset"]
+        for dataset in specification.dataset.values()
+        if dataset["collection"]
+    ]
     return valid_datasets
+
 
 @click.command()
 @click.option("--source", required=True)
-@click.option("--specification-dir",type=click.Path(exists=True), default="specification/")
-def do_replace_cli(source,specification_dir):
+@click.option(
+    "--specification-dir", type=click.Path(exists=True), default="specification/"
+)
+def do_replace_cli(source, specification_dir):
     specification = Specification(path=specification_dir)
     valid_datasets = get_valid_datasets(specification)
 
@@ -56,7 +64,8 @@ def do_replace_cli(source,specification_dir):
         if source == "digital-land":
             remove_invalid_datasets(valid_datasets)
 
-    return 
+    return
+
 
 def get_connection():
     try:
@@ -83,8 +92,8 @@ def get_connection():
 
     return connection
 
-def do_replace(source, tables_to_export=None):
 
+def do_replace(source, tables_to_export=None):
     if tables_to_export == None:
         tables_to_export = export_tables[source]
 
@@ -113,9 +122,10 @@ def do_replace(source, tables_to_export=None):
 
             make_valid_with_handle_geometry_collection(connection)
 
+
 def remove_invalid_datasets(valid_datasets):
     """
-    A function that uses the digital_land specification to delete unwanted datasets 
+    A function that uses the digital_land specification to delete unwanted datasets
     from the postgres database. This keeps the site aligned with the spec
     """
     valid_datasets_str = "', '".join(valid_datasets)
@@ -125,10 +135,10 @@ def remove_invalid_datasets(valid_datasets):
         sql = f"""
             DELETE FROM entity WHERE dataset not in ('{valid_datasets_str}');
         """
-        cursor.execute(sql)    
-    
+        cursor.execute(sql)
+
     connection.commit()
-    
+
     # TODO remove old_entities as well but given how the ranges work this isn't important for now
 
 
