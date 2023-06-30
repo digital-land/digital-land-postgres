@@ -4,12 +4,29 @@ DATABASE=${S3_KEY##*/}
 export DATABASE_NAME=${DATABASE%.*}
 echo "DATABASE NAME: $DATABASE_NAME"
 echo "$EVENT_ID: running with settings: S3_BUCKET=$S3_BUCKET, S3_KEY=$S3_KEY, DATABASE=$DATABASE, DATABASE_NAME=$DATABASE_NAME"
-
-
 # if [[ $DATABASE_NAME != "entity" && $DATABASE_NAME != "digital-land" ]]; then
 #   echo "$EVENT_ID: wrong database, skipping"
 #   exit 1
 # fi
+
+# download specification
+export SOURCE_URL=https://raw.githubusercontent.com/digital-land/
+mkdir -p specification/
+curl -qfsL $SOURCE_URL/specification/main/specification/attribution.csv > specification/attribution.csv
+curl -qfsL $SOURCE_URL/specification/main/specification/licence.csv > specification/licence.csv
+curl -qfsL $SOURCE_URL/specification/main/specification/typology.csv > specification/typology.csv
+curl -qfsL $SOURCE_URL/specification/main/specification/theme.csv > specification/theme.csv
+curl -qfsL $SOURCE_URL/specification/main/specification/collection.csv > specification/collection.csv
+curl -qfsL $SOURCE_URL/specification/main/specification/dataset.csv > specification/dataset.csv
+curl -qfsL $SOURCE_URL/specification/main/specification/dataset-field.csv > specification/dataset-field.csv
+curl -qfsL $SOURCE_URL/specification/main/specification/field.csv > specification/field.csv
+curl -qfsL $SOURCE_URL/specification/main/specification/datatype.csv > specification/datatype.csv
+curl -qfsL $SOURCE_URL/specification/main/specification/prefix.csv > specification/prefix.csv
+# deprecated ..
+curl -qfsL $SOURCE_URL/specification/main/specification/pipeline.csv > specification/pipeline.csv
+curl -qfsL $SOURCE_URL/specification/main/specification/dataset-schema.csv > specification/dataset-schema.csv
+curl -qfsL $SOURCE_URL/specification/main/specification/schema.csv > specification/schema.csv
+curl -qfsL $SOURCE_URL/specification/main/specification/schema-field.csv > specification/schema-field.csv
 
 
 if ! [ -f "$DATABASE_NAME.sqlite3" ]; then

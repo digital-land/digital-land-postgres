@@ -6,8 +6,11 @@ import sys
 import csv
 import psycopg2.extensions
 import urllib.parse as urlparse
-
 import click
+
+# load in specification
+from digital_land.specification import Specification
+
 
 root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../"))
 sys.path.append(root_dir)
@@ -37,17 +40,25 @@ export_tables = {
     ],
 }
 
+def get_valid_datasets(specification):
+    valid_datasets = [dataset['dataset'] for dataset in specification.dataset.values() if dataset['collection']]
+    return valid_datasets
 
 @click.command()
 @click.option("--source", required=True)
-def do_replace_cli(source):
-    return do_replace(source)
+@click.option("--specification-dir",type=click.Path(exists=True), default="specification/")
+def do_replace_cli(source,specification_dir):
+    specification = Specification(path=specification_dir)
+    valid_datasets = get_valid_datasets(specification)
 
+    if source == "digital-land" or source in valid_datasets:
+        do_replace(source)
+        if source == "digital-land":
+            remove_invalid_datasets(valid_datasets)
 
-def do_replace(source, tables_to_export=None):
-    if tables_to_export == None:
-        tables_to_export = export_tables[source]
+    return 
 
+def get_connection():
     try:
         url = urlparse.urlparse(os.getenv("WRITE_DATABASE_URL"))
         database = url.path[1:]
@@ -69,6 +80,15 @@ def do_replace(source, tables_to_export=None):
         )
 
     connection.autocommit = False
+
+    return connection
+
+def do_replace(source, tables_to_export=None):
+
+    if tables_to_export == None:
+        tables_to_export = export_tables[source]
+
+    connection = get_connection()
 
     for table in tables_to_export:
         logger.info(f"Loading from database: {source} table: {table}")
@@ -92,6 +112,24 @@ def do_replace(source, tables_to_export=None):
             make_valid_multipolygon(connection)
 
             make_valid_with_handle_geometry_collection(connection)
+
+def remove_invalid_datasets(valid_datasets):
+    """
+    A function that uses the digital_land specification to delete unwanted datasets 
+    from the postgres database. This keeps the site aligned with the spec
+    """
+    valid_datasets_str = "', '".join(valid_datasets)
+    connection = get_connection()
+    # remove datasets not in valid_datasets from entity
+    with connection.cursor() as cursor:
+        sql = f"""
+            DELETE FROM entity WHERE dataset not in ('{valid_datasets_str}');
+        """
+        cursor.execute(sql)    
+    
+    connection.commit()
+    
+    # TODO remove old_entities as well but given how the ranges work this isn't important for now
 
 
 def call_sql_queries(source, table, csv_filename, fieldnames, sql, cursor):

@@ -1,4 +1,25 @@
 #! /usr/bin/env bash
+
+# download specification
+export SOURCE_URL=https://raw.githubusercontent.com/digital-land/
+mkdir -p specification/
+curl -qfsL $SOURCE_URL/specification/main/specification/attribution.csv > specification/attribution.csv
+curl -qfsL $SOURCE_URL/specification/main/specification/licence.csv > specification/licence.csv
+curl -qfsL $SOURCE_URL/specification/main/specification/typology.csv > specification/typology.csv
+curl -qfsL $SOURCE_URL/specification/main/specification/theme.csv > specification/theme.csv
+curl -qfsL $SOURCE_URL/specification/main/specification/collection.csv > specification/collection.csv
+curl -qfsL $SOURCE_URL/specification/main/specification/dataset.csv > specification/dataset.csv
+curl -qfsL $SOURCE_URL/specification/main/specification/dataset-field.csv > specification/dataset-field.csv
+curl -qfsL $SOURCE_URL/specification/main/specification/field.csv > specification/field.csv
+curl -qfsL $SOURCE_URL/specification/main/specification/datatype.csv > specification/datatype.csv
+curl -qfsL $SOURCE_URL/specification/main/specification/prefix.csv > specification/prefix.csv
+# deprecated ..
+curl -qfsL $SOURCE_URL/specification/main/specification/pipeline.csv > specification/pipeline.csv
+curl -qfsL $SOURCE_URL/specification/main/specification/dataset-schema.csv > specification/dataset-schema.csv
+curl -qfsL $SOURCE_URL/specification/main/specification/schema.csv > specification/schema.csv
+curl -qfsL $SOURCE_URL/specification/main/specification/schema-field.csv > specification/schema-field.csv
+
+
 # need to use the files cdn instead of the bucket name when loading locally without logging into aws
 DATABASE=${S3_KEY##*/}
 export DATABASE_NAME=${DATABASE%.*}
