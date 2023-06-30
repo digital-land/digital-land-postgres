@@ -8,3 +8,7 @@ test:: test-integration
 
 test-integration:
 	python -m pytest tests/integration
+
+# TODO add flake8 back in to the linting
+lint::
+	black .

@@ -57,10 +57,9 @@ jobs:
 
       - name: Unit Tests
         run: |
-          make test-unit
-          echo "## Unit Tests" >> $GITHUB_STEP_SUMMARY
-  
-  
+          make test
+
+
   detect-environments:
     runs-on: ubuntu-latest
     outputs:
@@ -75,7 +74,7 @@ jobs:
           result-encoding: json
           script: |
             if (context.payload?.inputs?.environment) return [context.payload?.inputs?.environment];
-            const {data: {environments}} = 
+            const {data: {environments}} =
               await github.request(`GET /repos/${process.env.GITHUB_REPOSITORY}/environments`);
             return environments.map(e => e.name)
 
