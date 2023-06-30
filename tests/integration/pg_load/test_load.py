@@ -2,13 +2,10 @@ import csv
 import os
 import sys
 import pytest
-import psycopg2
-from conftest import postgresql_conn
 
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
 sys.path.insert(0, parent_dir)
-from task.pgload.load import (
-    do_replace,
+from task.pgload.load import (  # noqa: E402
     make_valid_multipolygon,
     make_valid_with_handle_geometry_collection,
     SQL,
@@ -50,7 +47,7 @@ def handle_geometry_collection_check(cursor):
     assert rowcount == 0
 
 
-# integration test for do_replace function
+# integration test for do_replace function TODO: this should actually use the do replace function
 def test_do_replace(sources, postgresql_conn, create_db):
     print("System path::::::", sys.path)
     for source in sources:

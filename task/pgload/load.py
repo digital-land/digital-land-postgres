@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 import os
 import logging
 import sys
@@ -14,7 +13,7 @@ from digital_land.specification import Specification
 
 root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../"))
 sys.path.append(root_dir)
-from pgload.sql import SQL
+from pgload.sql import SQL  # noqa: E402
 
 csv.field_size_limit(sys.maxsize)
 
@@ -78,7 +77,7 @@ def get_connection():
         connection = psycopg2.connect(
             host=host, database=database, user=user, password=password, port=port
         )
-    except:
+    except:  # noqa: E722
         host = os.getenv("DB_WRITE_ENDPOINT", "localhost")
         database = os.getenv("DB_NAME", "digital_land")
         user = os.getenv("DB_USER_NAME", "postgres")
@@ -94,7 +93,7 @@ def get_connection():
 
 
 def do_replace(source, tables_to_export=None):
-    if tables_to_export == None:
+    if tables_to_export is None:
         tables_to_export = export_tables[source]
 
     connection = get_connection()
@@ -152,18 +151,12 @@ def call_sql_queries(source, table, csv_filename, fieldnames, sql, cursor):
             cursor.execute(sql.drop_clone_table())
         elif source != "entity":
             cursor.execute("select count(*) from " + table)
-            row_count = cursor.fetchone()[0]
-            # print("row count in ", table," table before delete",row_count)
             cursor.execute(sql.update_tables())
             cursor.execute("select count(*) from entity")
-            row_count = cursor.fetchone()[0]
-            # print("row count in ", table," table after delete",row_count)
             with open(csv_filename) as f:
                 cursor.copy_expert(sql.copy_entity(), f)
 
             cursor.execute("select count(*) from entity")
-            row_count = cursor.fetchone()[0]
-            # print("row count in ", table," table after insert again",row_count)
     else:
         logger.info(f"No data found in database: {source} table: {table}")
 
