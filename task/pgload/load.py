@@ -1,17 +1,19 @@
 #!/usr/bin/env python
-
 import os
 import logging
 import sys
 import csv
 import psycopg2.extensions
 import urllib.parse as urlparse
-
 import click
+
+# load in specification
+from digital_land.specification import Specification
+
 
 root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../"))
 sys.path.append(root_dir)
-from pgload.sql import SQL
+from pgload.sql import SQL  # noqa: E402
 
 csv.field_size_limit(sys.maxsize)
 
@@ -38,16 +40,33 @@ export_tables = {
 }
 
 
+def get_valid_datasets(specification):
+    valid_datasets = [
+        dataset["dataset"]
+        for dataset in specification.dataset.values()
+        if dataset["collection"]
+    ]
+    return valid_datasets
+
+
 @click.command()
 @click.option("--source", required=True)
-def do_replace_cli(source):
-    return do_replace(source)
+@click.option(
+    "--specification-dir", type=click.Path(exists=True), default="specification/"
+)
+def do_replace_cli(source, specification_dir):
+    specification = Specification(path=specification_dir)
+    valid_datasets = get_valid_datasets(specification)
+
+    if source == "digital-land" or source in valid_datasets:
+        do_replace(source)
+        if source == "digital-land":
+            remove_invalid_datasets(valid_datasets)
+
+    return
 
 
-def do_replace(source, tables_to_export=None):
-    if tables_to_export == None:
-        tables_to_export = export_tables[source]
-
+def get_connection():
     try:
         url = urlparse.urlparse(os.getenv("WRITE_DATABASE_URL"))
         database = url.path[1:]
@@ -58,7 +77,7 @@ def do_replace(source, tables_to_export=None):
         connection = psycopg2.connect(
             host=host, database=database, user=user, password=password, port=port
         )
-    except:
+    except:  # noqa: E722
         host = os.getenv("DB_WRITE_ENDPOINT", "localhost")
         database = os.getenv("DB_NAME", "digital_land")
         user = os.getenv("DB_USER_NAME", "postgres")
@@ -69,6 +88,15 @@ def do_replace(source, tables_to_export=None):
         )
 
     connection.autocommit = False
+
+    return connection
+
+
+def do_replace(source, tables_to_export=None):
+    if tables_to_export is None:
+        tables_to_export = export_tables[source]
+
+    connection = get_connection()
 
     for table in tables_to_export:
         logger.info(f"Loading from database: {source} table: {table}")
@@ -94,6 +122,25 @@ def do_replace(source, tables_to_export=None):
             make_valid_with_handle_geometry_collection(connection)
 
 
+def remove_invalid_datasets(valid_datasets):
+    """
+    A function that uses the digital_land specification to delete unwanted datasets
+    from the postgres database. This keeps the site aligned with the spec
+    """
+    valid_datasets_str = "', '".join(valid_datasets)
+    connection = get_connection()
+    # remove datasets not in valid_datasets from entity
+    with connection.cursor() as cursor:
+        sql = f"""
+            DELETE FROM entity WHERE dataset not in ('{valid_datasets_str}');
+        """
+        cursor.execute(sql)
+
+    connection.commit()
+
+    # TODO remove old_entities as well but given how the ranges work this isn't important for now
+
+
 def call_sql_queries(source, table, csv_filename, fieldnames, sql, cursor):
     if fieldnames is not None:
         if source == "digital-land":
@@ -104,18 +151,12 @@ def call_sql_queries(source, table, csv_filename, fieldnames, sql, cursor):
             cursor.execute(sql.drop_clone_table())
         elif source != "entity":
             cursor.execute("select count(*) from " + table)
-            row_count = cursor.fetchone()[0]
-            # print("row count in ", table," table before delete",row_count)
             cursor.execute(sql.update_tables())
             cursor.execute("select count(*) from entity")
-            row_count = cursor.fetchone()[0]
-            # print("row count in ", table," table after delete",row_count)
             with open(csv_filename) as f:
                 cursor.copy_expert(sql.copy_entity(), f)
 
             cursor.execute("select count(*) from entity")
-            row_count = cursor.fetchone()[0]
-            # print("row count in ", table," table after insert again",row_count)
     else:
         logger.info(f"No data found in database: {source} table: {table}")
 
