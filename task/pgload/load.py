@@ -117,9 +117,9 @@ def do_replace(source, tables_to_export=None):
         logger.info(f"Finished loading from database: {source} table: {table}")
 
         if source != "entity" and table == "entity":
-            make_valid_multipolygon(connection)
+            make_valid_multipolygon(connection,source)
 
-            make_valid_with_handle_geometry_collection(connection)
+            make_valid_with_handle_geometry_collection(connection,source)
 
 
 def remove_invalid_datasets(valid_datasets):
@@ -161,15 +161,18 @@ def call_sql_queries(source, table, csv_filename, fieldnames, sql, cursor):
         logger.info(f"No data found in database: {source} table: {table}")
 
 
-def make_valid_with_handle_geometry_collection(connection):
+def make_valid_with_handle_geometry_collection(connection, source):
     make_valid_with_handle_geometry_collection = """
                 UPDATE entity SET geometry = ST_CollectionExtract(ST_MakeValid(geometry))
-                WHERE geometry IS NOT NULL AND NOT ST_IsValid(geometry)
-                AND ST_GeometryType(ST_MakeValid(geometry)) = 'ST_GeometryCollection';
+                WHERE geometry IS NOT NULL 
+                AND ST_GeometryType(ST_MakeValid(geometry)) = 'ST_GeometryCollection' AND  dataset = %s
+                AND (
+                    (ST_IsSimple(geometry) AND NOT ST_IsValid(geometry))
+                    OR NOT ST_IsSimple(geometry));
                 """.strip()
 
     with connection.cursor() as cursor:
-        cursor.execute(make_valid_with_handle_geometry_collection)
+        cursor.execute(make_valid_with_handle_geometry_collection, (source,))
         rowcount = cursor.rowcount
         connection.commit()
 
@@ -178,15 +181,21 @@ def make_valid_with_handle_geometry_collection(connection):
     )
 
 
-def make_valid_multipolygon(connection):
+def make_valid_multipolygon(connection,source):
     make_valid_multipolygon = """
-                UPDATE entity set geometry = ST_MakeValid(geometry)
-                WHERE geometry IS NOT NULL AND NOT ST_IsValid(geometry)
-                AND ST_GeometryType(ST_MakeValid(geometry)) = 'ST_MultiPolygon';
-                """.strip()
+                UPDATE entity
+            SET geometry = ST_MakeValid(geometry)
+            WHERE geometry IS NOT NULL 
+                AND ST_GeometryType(ST_MakeValid(geometry)) = 'ST_MultiPolygon'
+                AND dataset = %s
+                AND (
+                    (ST_IsSimple(geometry) AND NOT ST_IsValid(geometry))
+                    OR NOT ST_IsSimple(geometry));
+        """.strip()
+    
 
     with connection.cursor() as cursor:
-        cursor.execute(make_valid_multipolygon)
+        cursor.execute(make_valid_multipolygon, (source,))
         rowcount = cursor.rowcount
         connection.commit()
 
