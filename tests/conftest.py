@@ -77,8 +77,7 @@ def create_db(postgresql_conn):
         wikidata varchar,
         wikipedia varchar,
         themes varchar,
-        attribution_id
-        varchar,
+        attribution_id varchar,
         licence_id varchar,
         consideration varchar
         )"""
@@ -241,8 +240,9 @@ def create_db(postgresql_conn):
                     wikipedia,
                     themes,
                     attribution_id,
-                    ålicence_id
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    licence_id,
+                    consideration
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """,
                 row,
             )
