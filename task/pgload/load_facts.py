@@ -1,8 +1,5 @@
 import logging
-import pathlib
 import sys
-import subprocess
-import tempfile
 import os
 import click
 import psycopg2
@@ -35,7 +32,9 @@ def load_facts():
         connection = psycopg2.connect(
             host=host, database=database, user=user, password=password, port=port
         )
-    except:
+
+    except Exception as e:
+        logger.error(f"Error connecting to database: {e}")
         host = os.getenv("DB_WRITE_ENDPOINT", "localhost")
         database = os.getenv("DB_NAME", "digital_land")
         user = os.getenv("DB_USER_NAME", "postgres")
@@ -74,6 +73,14 @@ def load_facts():
 
 
 def load_facts_into_postgres(rows):
+
+    url = urlparse.urlparse(os.getenv("WRITE_DATABASE_URL"))
+    database = url.path[1:]
+    user = url.username
+    password = url.password
+    host = url.hostname
+    port = url.port
+
     for row in rows:
         for key, val in row.items():
             if not val:

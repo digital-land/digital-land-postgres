@@ -22,32 +22,37 @@ def sources():
 
 
 # function to check if invalid data is updated correctly
-def multipolygon_check(cursor,source):
-    cursor.execute("""
+def multipolygon_check(cursor, source):
+    cursor.execute(
+        """
             SELECT COUNT(*) FROM entity
-            WHERE geometry IS NOT NULL 
+            WHERE geometry IS NOT NULL
                 AND ST_GeometryType(ST_MakeValid(geometry)) = 'ST_MultiPolygon'
                 AND dataset = %s
                 AND (
                     (ST_IsSimple(geometry) AND NOT ST_IsValid(geometry))
                     OR NOT ST_IsSimple(geometry));
-            """, (source,))
+            """,
+        (source,),
+    )
     rowcount = cursor.fetchone()[0]
     assert rowcount == 0
 
 
 # function to check if invalid data is updated correctly
-def handle_geometry_collection_check(cursor,source):
+def handle_geometry_collection_check(cursor, source):
     cursor.execute(
         """
             SELECT COUNT(*) FROM entity
-            WHERE geometry IS NOT NULL 
+            WHERE geometry IS NOT NULL
                 AND ST_GeometryType(ST_MakeValid(geometry)) = 'ST_MultiPolygon'
                 AND dataset = %s
                 AND (
                     (ST_IsSimple(geometry) AND NOT ST_IsValid(geometry))
                     OR NOT ST_IsSimple(geometry));
-            """, (source,))
+            """,
+        (source,),
+    )
     rowcount = cursor.fetchone()[0]
     assert rowcount == 0
 
@@ -85,20 +90,21 @@ def test_do_replace(sources, postgresql_conn, create_db):
         print("Testing do_replace method for source successful:: ", source)
 
 
-def test_make_valid_multipolygon(postgresql_conn,sources):
+def test_make_valid_multipolygon(postgresql_conn, sources):
 
     cursor = postgresql_conn.cursor()
     for source in sources:
-        make_valid_multipolygon(postgresql_conn,source)
-        multipolygon_check(cursor,source)
+        make_valid_multipolygon(postgresql_conn, source)
+        multipolygon_check(cursor, source)
     postgresql_conn.commit()
     cursor.close()
-    
-def test_make_valid_with_handle_geometry_collection(postgresql_conn,sources):
-    
+
+
+def test_make_valid_with_handle_geometry_collection(postgresql_conn, sources):
+
     cursor = postgresql_conn.cursor()
     for source in sources:
-        make_valid_with_handle_geometry_collection(postgresql_conn,source)
-        handle_geometry_collection_check(cursor,source)
+        make_valid_with_handle_geometry_collection(postgresql_conn, source)
+        handle_geometry_collection_check(cursor, source)
     postgresql_conn.commit()
     cursor.close()

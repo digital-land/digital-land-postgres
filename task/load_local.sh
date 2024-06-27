@@ -23,7 +23,7 @@ curl -qfsL $SOURCE_URL/specification/main/specification/schema-field.csv > speci
 # need to use the files cdn instead of the bucket name when loading locally without logging into aws
 DATABASE=${S3_KEY##*/}
 export DATABASE_NAME=${DATABASE%.*}
-echo "DATABASE NAMW: $DATABASE_NAME"
+echo "DATABASE NAME: $DATABASE_NAME"
 echo "$EVENT_ID: running with settings: S3_KEY=$S3_KEY, DATABASE=$DATABASE, DATABASE_NAME=$DATABASE_NAME"
 
 

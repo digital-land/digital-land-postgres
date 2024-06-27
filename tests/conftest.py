@@ -1,10 +1,7 @@
 import pytest
 import os
 import csv
-
-# from sqlalchemy_utils import database_exists, create_database, drop_database
 import psycopg2.extensions
-import urllib.parse as urlparse
 
 
 @pytest.fixture(scope="session")
@@ -45,8 +42,7 @@ def create_db(postgresql_conn):
             geojson varchar,
             geometry geometry null,
             point varchar
-        )
-    """
+        )"""
     )
     cursor.execute(
         """
@@ -59,72 +55,122 @@ def create_db(postgresql_conn):
             notes varchar,
             status varchar,
             entity varchar null
-        )
-    """
+        )"""
     )
 
     cursor.execute(
         """
         CREATE TABLE dataset (
-        dataset varchar,name varchar,entry_date varchar,start_date varchar,end_date varchar,collection varchar,description varchar,key_field varchar,paint_options varchar,plural varchar,prefix varchar,text varchar,typology varchar,wikidata varchar,wikipedia varchar,themes varchar,attribution_id varchar,licence_id varchar
-        )
-    """
+        dataset varchar,
+        name varchar,
+        entry_date varchar,
+        start_date varchar,
+        end_date varchar,
+        collection varchar,
+        description varchar,
+        key_field varchar,
+        paint_options varchar,
+        plural varchar,
+        prefix varchar,
+        text varchar,
+        typology varchar,
+        wikidata varchar,
+        wikipedia varchar,
+        themes varchar,
+        attribution_id
+        varchar,
+        licence_id varchar,
+        consideration varchar
+        )"""
     )
 
     cursor.execute(
         """
         CREATE TABLE typology (
-        typology varchar,name varchar,description varchar,entry_date varchar,start_date varchar,end_date varchar,plural varchar,text varchar,wikidata varchar,wikipedia varchar
-        )
-    """
+            typology varchar,
+            name varchar,
+            description varchar,
+            entry_date varchar,
+            start_date varchar,
+            end_date varchar,
+            plural varchar,
+            text varchar,
+            wikidata varchar,
+            wikipedia varchar
+        )"""
     )
 
     cursor.execute(
         """
         CREATE TABLE organisation (
-        organisation varchar,name varchar,combined_authority varchar,entry_date varchar,start_date varchar,end_date varchar,entity varchar,local_authority_type varchar,official_name varchar,region varchar,statistical_geography varchar,website varchar
-        )
-    """
+        organisation varchar,
+        name varchar,
+        combined_authority varchar,
+        entry_date varchar,
+        start_date varchar,
+        end_date varchar,
+        entity varchar,
+        local_authority_type varchar,
+        official_name varchar,
+        region varchar,
+        statistical_geography varchar,
+        website varchar
+        )"""
     )
 
     cursor.execute(
         """
         CREATE TABLE dataset_collection (
-        dataset_collection varchar,resource varchar,resource_end_date varchar,resource_entry_date varchar,last_updated varchar,last_collection_attempt varchar
-        )
-    """
+            dataset_collection varchar,
+            resource varchar,
+            resource_end_date varchar,
+            resource_entry_date varchar,
+            last_updated varchar,
+            last_collection_attempt varchar
+        )"""
     )
 
     cursor.execute(
         """
         CREATE TABLE dataset_publication (
-        dataset_publication varchar,expected_publisher_count varchar,publisher_count varchar
-        )
-    """
+            dataset_publication varchar,
+            expected_publisher_count varchar,
+            publisher_count varchar
+        )"""
     )
 
     cursor.execute(
         """
         CREATE TABLE lookup (
-        id varchar,entity varchar,prefix varchar,reference varchar,entry_date varchar,start_date varchar,value varchar
-        )
-    """
+            id varchar,entity varchar,
+            prefix varchar,
+            reference varchar,
+            entry_date varchar,
+            start_date varchar,
+            value varchar
+        )"""
     )
 
     cursor.execute(
         """
         CREATE TABLE attribution (
-        attribution varchar,text varchar,entry_date varchar,start_date varchar,end_date varchar
-        )
-    """
+            attribution varchar,
+            text varchar,
+            entry_date varchar,
+            start_date varchar,
+            end_date varchar
+        )"""
     )
 
     cursor.execute(
         """
         CREATE TABLE licence (
-        licence varchar,text varchar,entry_date varchar,start_date varchar,end_date varchar
-        )
-    """
+            licence varchar,
+            text varchar,
+            entry_date varchar,
+            start_date varchar,
+            end_date varchar
+        )"""
     )
 
     with open("tests/test_data/exported_entity.csv", "r") as f:
@@ -180,7 +226,22 @@ def create_db(postgresql_conn):
             cursor.execute(
                 """
                 INSERT INTO dataset (
-                    dataset,name,entry_date,start_date,end_date,collection,description,key_field,paint_options,plural,prefix,text,typology,wikidata,wikipedia,themes,attribution_id,licence_id
+                    dataset,
+                    name,
+                    entry_date,
+                    start_date,
+                    end_date,
+                    collection,
+                    description,
+                    key_field,
+                    paint_options,
+                    plural,prefix,
+                    text,typology,
+                    wikidata,
+                    wikipedia,
+                    themes,
+                    attribution_id,
+                    ålicence_id
                 ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """,
                 row,
@@ -193,7 +254,16 @@ def create_db(postgresql_conn):
             cursor.execute(
                 """
                 INSERT INTO typology (
-                    typology,name,description,entry_date,start_date,end_date,plural,text,wikidata,wikipedia
+                    typology,
+                    name,
+                    description,
+                    entry_date,
+                    start_date,
+                    end_date,
+                    plural,
+                    text,
+                    wikidata,
+                    wikipedia
                 ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """,
                 row,
@@ -206,7 +276,18 @@ def create_db(postgresql_conn):
             cursor.execute(
                 """
                 INSERT INTO organisation (
-                    organisation,name,combined_authority,entry_date,start_date,end_date,entity,local_authority_type,official_name,region,statistical_geography,website
+                    organisation,
+                    name,
+                    combined_authority,
+                    entry_date,
+                    start_date,
+                    end_date,
+                    entity,
+                    local_authority_type,
+                    official_name,
+                    region,
+                    statistical_geography,
+                    website
                 ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """,
                 row,
@@ -219,7 +300,12 @@ def create_db(postgresql_conn):
             cursor.execute(
                 """
                 INSERT INTO dataset_collection (
-                    dataset_collection,resource,resource_end_date,resource_entry_date,last_updated,last_collection_attempt
+                    dataset_collection,
+                    resource,
+                    resource_end_date,
+                    resource_entry_date,
+                    last_updated,
+                    last_collection_attempt
                 ) VALUES (%s, %s, %s, %s, %s, %s)
             """,
                 row,
