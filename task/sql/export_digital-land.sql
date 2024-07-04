@@ -21,7 +21,8 @@ SELECT
     nullif(d.wikipedia, "") as wikipedia,
     "{" || GROUP_CONCAT(dt.theme, ',') || "}" as themes,
     nullif(d.attribution, "") as attribution_id,
-    nullif(d.licence, "") as licence_id
+    nullif(d.licence, "") as licence_id,
+    nullif(d.consideration, "") as consideration
 FROM dataset d, dataset_theme dt
 WHERE d.dataset = dt.dataset
 GROUP BY d.dataset;
@@ -121,4 +122,3 @@ SELECT
     nullif(l.start_date, "") as start_date,
     nullif(l.end_date, "") as end_date
 FROM licence l;
-

@@ -1,0 +1,8 @@
+pytest
+flake8
+pre-commit
+black
+pytest-pudb
+pytest-mock
+pytest-md-report
+psycopg2

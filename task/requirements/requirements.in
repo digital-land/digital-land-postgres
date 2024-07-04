@@ -1,0 +1,4 @@
+digital_land @ git+https://github.com/digital-land/pipeline.git#egg=digital-land
+click
+psycopg2
+requests
