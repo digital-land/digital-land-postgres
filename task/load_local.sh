@@ -1,5 +1,21 @@
 #! /usr/bin/env bash
 
+s3_object_arn_regex="^arn:aws:s3:::([0-9A-Za-z-]*/)(.*)$"
+
+if ! [[ "$S3_OBJECT_ARN" =~ $s3_object_arn_regex ]]; then
+    echo "Received invalid S3 Object S3 ARN: $S3_OBJECT_ARN, skipping"
+    exit 1
+fi
+
+S3_KEY=${BASH_REMATCH[2]}
+
+# need to use the files cdn instead of the bucket name when loading locally without logging into aws
+DATABASE=${S3_KEY##*/}
+
+export DATABASE_NAME=${DATABASE%.*}
+echo "DATABASE NAME: $DATABASE_NAME"
+echo "$EVENT_ID: running with settings: S3_KEY=$S3_KEY, DATABASE=$DATABASE, DATABASE_NAME=$DATABASE_NAME"
+
 # download specification
 export SOURCE_URL=https://raw.githubusercontent.com/digital-land/
 mkdir -p specification/
@@ -18,15 +34,6 @@ curl -qfsL $SOURCE_URL/specification/main/specification/pipeline.csv > specifica
 curl -qfsL $SOURCE_URL/specification/main/specification/dataset-schema.csv > specification/dataset-schema.csv
 curl -qfsL $SOURCE_URL/specification/main/specification/schema.csv > specification/schema.csv
 curl -qfsL $SOURCE_URL/specification/main/specification/schema-field.csv > specification/schema-field.csv
-
-
-# need to use the files cdn instead of the bucket name when loading locally without logging into aws
-DATABASE=${S3_KEY##*/}
-export DATABASE_NAME=${DATABASE%.*}
-echo "DATABASE NAME: $DATABASE_NAME"
-echo "$EVENT_ID: running with settings: S3_KEY=$S3_KEY, DATABASE=$DATABASE, DATABASE_NAME=$DATABASE_NAME"
-
-
 
 # if [[ $DATABASE_NAME != "entity" && $DATABASE_NAME != "digital-land" ]]; then
 #   echo "$EVENT_ID: wrong database, skipping"

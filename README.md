@@ -3,11 +3,10 @@
 ## Loading data into postgres in AWS
 
 This repository contains code that is used as a runnable task in ECS. The
-entry point [task/load.sh](task/load.sh) expects environment variables
-are set for:
+entry point [task/load.sh](task/load.sh) expects an environment variable
+is set for the S3 object to consume:
 
-    S3_BUCKET=some-bucket
-    S3_KEY=some-key
+    S3_OBJECT_ARN=arn:aws:s3:::some-bucket/some-key.sqlite3
 
 These provide a bucket and key to load data from. At the moment the keys are assumed to be sqlite files produced by
 the digital land collection process.
@@ -21,6 +20,10 @@ of the digital-land-terraform repository.
 To see how the values for bucket and key are extracted have a [look here](https://github.com/digital-land/digital-land-infrastructure/blob/main/terraform/modules/tasks/main.tf#L136:L155)
 
 ## Running locally to load data into local postgres
+
+Running locally does not download the Digital Land Sqlite database from S3 directly but instead via a CDN, it is 
+necessary to ensure the $S3_OBJECT_ARN contains the correct file path. The bucket name portion of the ARN will
+be ignored and the file path will be appended to https://files.planning.data.gov.uk/.
 
 **Prerequisites**
 
@@ -39,7 +42,7 @@ application)
 
 With a fresh checkout that file configures the scripts in this repo to load the digital-land database.
 
-To load the entity database change the S3_KEY to the correct key for the entity sqlite database (see below).
+To load the entity database ensure the $S3_OBJECT_ARN has the correct key for the entity sqlite database (see below).
 
 
 2. **Create a virtualenv and install requirements**
@@ -56,7 +59,7 @@ Remember the .env file is already set to load the digital-land db. However in or
 
 6. **Run the load script to load entity database**
 
-Update the S3_KEY in the .env file to S3_KEY=entity-builder/dataset/entity.sqlite3
+Update the $S3_OBJECT_ARN in the .env file to $S3_OBJECT_ARN=arn:aws:s3:::placeholder/entity-builder/dataset/entity.sqlite3
 
     ./load_local.sh
 
