@@ -21,8 +21,9 @@ To see how the values for bucket and key are extracted have a [look here](https:
 
 ## Running locally to load data into local postgres
 
-Since running locally does not download the Digital Land Sqlite database from S3, it is necessary to set the
-$SQLITE_FILE_PATH environment variable rather than $S3_OBJECT_ARN.
+Running locally does not download the Digital Land Sqlite database from S3 directly but instead via a CDN, it is 
+necessary to ensure the $S3_OBJECT_ARN contains the correct file path. The bucket name portion of the ARN will
+be ignored and the file path will be appended to https://files.planning.data.gov.uk/.
 
 **Prerequisites**
 
@@ -41,7 +42,7 @@ application)
 
 With a fresh checkout that file configures the scripts in this repo to load the digital-land database.
 
-To load the entity database change the $SQLITE_FILE_PATH to the correct key for the entity sqlite database (see below).
+To load the entity database ensure the $S3_OBJECT_ARN has the correct key for the entity sqlite database (see below).
 
 
 2. **Create a virtualenv and install requirements**
@@ -58,7 +59,7 @@ Remember the .env file is already set to load the digital-land db. However in or
 
 6. **Run the load script to load entity database**
 
-Update the $SQLITE_FILE_PATH in the .env file to $SQLITE_FILE_PATH=entity-builder/dataset/entity.sqlite3
+Update the $S3_OBJECT_ARN in the .env file to $S3_OBJECT_ARN=arn:aws:s3:::placeholder/entity-builder/dataset/entity.sqlite3
 
     ./load_local.sh
 
