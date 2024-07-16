@@ -1,5 +1,16 @@
 #! /usr/bin/env bash
 # need to use the files cdn instead of the bucket name when loading locally without logging into aws
+
+s3_object_arn_regex="^arn:aws:s3:::([0-9A-Za-z-]*/)(.*)$"
+
+if ! [[ "$S3_OBJECT_ARN" =~ $s3_object_arn_regex ]]; then
+    echo "Received invalid S3 Object S3 ARN: $S3_OBJECT_ARN, skipping"
+    exit 1
+fi
+
+S3_BUCKET=${BASH_REMATCH[1]%/*}
+S3_KEY=${BASH_REMATCH[2]}
+
 DATABASE=${S3_KEY##*/}
 export DATABASE_NAME=${DATABASE%.*}
 echo "DATABASE NAME: $DATABASE_NAME"

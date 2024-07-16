@@ -21,10 +21,10 @@ curl -qfsL $SOURCE_URL/specification/main/specification/schema-field.csv > speci
 
 
 # need to use the files cdn instead of the bucket name when loading locally without logging into aws
-DATABASE=${S3_KEY##*/}
+DATABASE=${SQLITE_FILE_PATH##*/}
 export DATABASE_NAME=${DATABASE%.*}
 echo "DATABASE NAME: $DATABASE_NAME"
-echo "$EVENT_ID: running with settings: S3_KEY=$S3_KEY, DATABASE=$DATABASE, DATABASE_NAME=$DATABASE_NAME"
+echo "$EVENT_ID: running with settings: SQLITE_FILE_PATH=$SQLITE_FILE_PATH, DATABASE=$DATABASE, DATABASE_NAME=$DATABASE_NAME"
 
 
 
@@ -35,11 +35,11 @@ echo "$EVENT_ID: running with settings: S3_KEY=$S3_KEY, DATABASE=$DATABASE, DATA
 
 
 if ! [ -f "$DATABASE_NAME.sqlite3" ]; then
-  echo "$EVENT_ID: attempting download from https://files.planning.data.gov.uk/$S3_KEY"
-  if curl --fail --show-error --location "https://files.planning.data.gov.uk/$S3_KEY" > "$DATABASE_NAME.sqlite3"; then
-      echo "$EVENT_ID: finished downloading from https://files.planning.data.gov.uk/$S3_KEY"
+  echo "$EVENT_ID: attempting download from https://files.planning.data.gov.uk/$SQLITE_FILE_PATH"
+  if curl --fail --show-error --location "https://files.planning.data.gov.uk/$SQLITE_FILE_PATH" > "$DATABASE_NAME.sqlite3"; then
+      echo "$EVENT_ID: finished downloading from https://files.planning.data.gov.uk/$SQLITE_FILE_PATH"
   else
-      echo "$EVENT_ID: failed to download from https://files.planning.data.gov.uk/$S3_KEY"
+      echo "$EVENT_ID: failed to download from https://files.planning.data.gov.uk/$SQLITE_FILE_PATH"
       rm "$DATABASE_NAME.sqlite3"  # remove the file if it was created
       exit 1
   fi
