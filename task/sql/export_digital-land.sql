@@ -22,7 +22,14 @@ SELECT
     "{" || GROUP_CONCAT(dt.theme, ',') || "}" as themes,
     nullif(d.attribution, "") as attribution_id,
     nullif(d.licence, "") as licence_id,
-    nullif(d.consideration, "") as consideration
+    nullif(d.consideration, "") as consideration,
+    nullif(d.github_discussion, "") as github_discussion,
+    nullif(d.entity_minimum, "") as entity_minimum,
+    nullif(d.entity_maximum, "") as entity_maximum,
+    nullif(d.phase, "") as phase,
+    nullif(d.realm, "") as realm,
+    nullif(d.version, "") as version,
+    nullif(d.replacement_dataset, "") as replacement_dataset
 FROM dataset d, dataset_theme dt
 WHERE d.dataset = dt.dataset
 GROUP BY d.dataset;
