@@ -79,7 +79,14 @@ def create_db(postgresql_conn):
         themes varchar,
         attribution_id varchar,
         licence_id varchar,
-        consideration varchar
+        consideration varchar,
+        github_discussion varchar,
+        entity_minimum varchar,
+        entity_maximum varchar,
+        phase varchar,
+        realm varchar,
+        version varchar,
+        replacement_dataset varchar
         )"""
     )
 
@@ -241,8 +248,16 @@ def create_db(postgresql_conn):
                     themes,
                     attribution_id,
                     licence_id,
-                    consideration
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    consideration,
+                    github_discussion,
+                    entity_minimum,
+                    entity_maximum,
+                    phase,
+                    realm,
+                    version,
+                    replacement_dataset
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """,
                 row,
             )
