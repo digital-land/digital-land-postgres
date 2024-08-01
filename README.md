@@ -21,7 +21,7 @@ To see how the values for bucket and key are extracted have a [look here](https:
 
 ## Running locally to load data into local postgres
 
-Running locally does not download the Digital Land Sqlite database from S3 directly but instead via a CDN, it is 
+Running locally does not download the Digital Land Sqlite database from S3 directly but instead via a CDN, it is
 necessary to ensure the $S3_OBJECT_ARN contains the correct file path. The bucket name portion of the ARN will
 be ignored and the file path will be appended to https://files.planning.data.gov.uk/.
 
@@ -59,7 +59,7 @@ Remember the .env file is already set to load the digital-land db. However in or
 
 6. **Run the load script to load entity database**
 
-Update the $S3_OBJECT_ARN in the .env file to $S3_OBJECT_ARN=arn:aws:s3:::placeholder/entity-builder/dataset/entity.sqlite3
+Update the $S3_OBJECT_ARN in the .env file to $S3_OBJECT_ARN=arn:aws:s3:::production-collection-data/entity-builder/dataset/entity.sqlite3
 
     ./load_local.sh
 
