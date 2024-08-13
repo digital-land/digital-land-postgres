@@ -42,7 +42,7 @@ application)
 
 With a fresh checkout that file configures the scripts in this repo to load the digital-land database.
 
-To load the entity database ensure the $S3_OBJECT_ARN has the correct key for the entity sqlite database (see below).
+To load the entity database ensure the S3_OBJECT_ARN has the correct key for the entity sqlite database (see below).
 
 
 2. **Create a virtualenv and install requirements**
@@ -55,13 +55,19 @@ cd into the task directory and run:
 
 Remember the .env file is already set to load the digital-land db. However in order to load the db without using an aws account sign in you will need to use a different script
 
-    ./load_local.sh
+    source .env && ./load_local.sh
 
-6. **Run the load script to load entity database**
+6. **Run the load script to load entities from a specific dataset database**
 
-Update the $S3_OBJECT_ARN in the .env file to $S3_OBJECT_ARN=arn:aws:s3:::production-collection-data/entity-builder/dataset/entity.sqlite3
+Update the S3_OBJECT_ARN in the .env file to S3_OBJECT_ARN=arn:aws:s3:::digital-land-production-collection-dataset/[collection-name]-collection/dataset/[dataset-name].sqlite3
 
-    ./load_local.sh
+For example to load ancient-woodland-status, update the .env to contain the following:
+
+    export S3_OBJECT_ARN=arn:aws:s3:::digital-land-production-collection-dataset/ancient-woodland-collection/dataset/ancient-woodland-status.sqlite3
+
+The run:
+
+    source .env && ./load_local.sh
 
 You'll notice that the load script downloads sqlite databases and creates csv files in the directory it runs from. These
 files are git and docker ignored, so once done loading you can delete. It's a dumb script so each time you run it
