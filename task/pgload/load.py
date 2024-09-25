@@ -121,6 +121,8 @@ def do_replace(source, tables_to_export=None):
 
             make_valid_with_handle_geometry_collection(connection, source)
 
+            update_simplified_geometry_column(connection,source)
+
 
 def remove_invalid_datasets(valid_datasets):
     """
@@ -200,6 +202,21 @@ def make_valid_multipolygon(connection, source):
 
     logger.info(f"Updated {rowcount} rows with valid multi polygons")
 
+def update_simplified_geometry_column(connection,source):
+    simplified_geometry_column_update = """
+                UPDATE entity
+            SET simplified_geometry = ST_SimplifyPreserveTopology(geometry, 0.0001)
+            WHERE dataset = %s and
+            geometry IS NOT NULL AND ST_GeometryType(geometry) = 'ST_MultiPolygon';
+        """.strip()
+    
+
+    with connection.cursor() as cursor:
+        cursor.execute(simplified_geometry_column_update, (source,))
+        rowcount = cursor.rowcount
+        connection.commit()
+
+    logger.info(f"Updated {rowcount} rows with simplified multi polygons")
 
 if __name__ == "__main__":
     do_replace_cli()
