@@ -91,7 +91,6 @@ def test_do_replace(sources, postgresql_conn, create_db):
 
 
 def test_make_valid_multipolygon(postgresql_conn, sources):
-
     cursor = postgresql_conn.cursor()
     for source in sources:
         make_valid_multipolygon(postgresql_conn, source)
@@ -101,10 +100,43 @@ def test_make_valid_multipolygon(postgresql_conn, sources):
 
 
 def test_make_valid_with_handle_geometry_collection(postgresql_conn, sources):
-
     cursor = postgresql_conn.cursor()
     for source in sources:
         make_valid_with_handle_geometry_collection(postgresql_conn, source)
         handle_geometry_collection_check(cursor, source)
     postgresql_conn.commit()
     cursor.close()
+
+
+def test_unretired_entities(postgresql_conn):
+    source = "certificate-of-immunity"
+    table = "old_entity"
+
+    for file in ["exported_old_entity_1.csv", "exported_old_entity_2.csv"]:
+        csv_filename = os.path.join("tests/test_unretired/", file)
+
+        with open(csv_filename, "r") as f:
+            reader = csv.DictReader(f, delimiter="|")
+            fieldnames = reader.fieldnames
+
+        sql = SQL(table=table, fields=fieldnames, source=source)
+
+        with postgresql_conn.cursor() as cursor:
+            call_sql_queries(
+                source,
+                table,
+                csv_filename,
+                fieldnames,
+                sql,
+                cursor,
+            )
+
+        postgresql_conn.commit()
+
+    cursor = postgresql_conn.cursor()
+    cursor.execute(
+        "SELECT COUNT(*) FROM old_entity WHERE old_entity >= 2300000 AND old_entity <= 2300100",
+    )
+    rowcount = cursor.fetchone()[0]
+    cursor.close()
+    assert rowcount == 1
