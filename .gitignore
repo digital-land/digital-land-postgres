@@ -132,7 +132,7 @@ dmypy.json
 .data
 .db-data
 .idea
-*.csv
-*.sqlite*
+task/*.csv
+task/*.sqlite*
 .DS_Store
 .secrets
