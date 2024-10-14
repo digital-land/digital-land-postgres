@@ -11,6 +11,7 @@ from task.pgload.load import (  # noqa: E402
     SQL,
     call_sql_queries,
     export_tables,
+    get_fieldnames,
 )
 
 
@@ -115,9 +116,7 @@ def test_unretired_entities(postgresql_conn):
     for file in ["exported_old_entity_1.csv", "exported_old_entity_2.csv"]:
         csv_filename = os.path.join("tests/test_unretired/", file)
 
-        with open(csv_filename, "r") as f:
-            reader = csv.DictReader(f, delimiter="|")
-            fieldnames = reader.fieldnames
+        fieldnames = get_fieldnames(csv_filename)
 
         sql = SQL(table=table, fields=fieldnames, source=source)
 
@@ -139,7 +138,7 @@ def test_unretired_entities(postgresql_conn):
     )
     rowcount = cursor.fetchone()[0]
     cursor.close()
-    assert rowcount == 1
+    assert rowcount == 0
 
 
 def test_unretired_entities_blank(postgresql_conn):
@@ -149,9 +148,7 @@ def test_unretired_entities_blank(postgresql_conn):
     for file in ["exported_old_entity_1.csv", "exported_old_entity_3.csv"]:
         csv_filename = os.path.join("tests/test_unretired/", file)
 
-        with open(csv_filename, "r") as f:
-            reader = csv.DictReader(f, delimiter="|")
-            fieldnames = reader.fieldnames
+        fieldnames = get_fieldnames(csv_filename)
 
         sql = SQL(table=table, fields=fieldnames, source=source)
 

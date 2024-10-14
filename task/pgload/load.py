@@ -49,6 +49,15 @@ def get_valid_datasets(specification):
     return valid_datasets
 
 
+def get_fieldnames(csv_filename):
+    if os.stat(csv_filename).st_size == 0:
+        return {}
+    else:
+        with open(csv_filename, "r") as f:
+            reader = csv.DictReader(f, delimiter="|")
+            return reader.fieldnames
+
+
 @click.command()
 @click.option("--source", required=True)
 @click.option(
@@ -103,9 +112,7 @@ def do_replace(source, tables_to_export=None):
 
         csv_filename = f"exported_{table}.csv"
 
-        with open(csv_filename, "r") as f:
-            reader = csv.DictReader(f, delimiter="|")
-            fieldnames = reader.fieldnames
+        fieldnames = get_fieldnames(csv_filename)
 
         sql = SQL(table=table, fields=fieldnames, source=source)
 
@@ -153,8 +160,9 @@ def call_sql_queries(source, table, csv_filename, fieldnames, sql, cursor):
             cursor.execute("select count(*) from " + table)
             cursor.execute(sql.update_tables())
             cursor.execute("select count(*) from entity")
-            with open(csv_filename) as f:
-                cursor.copy_expert(sql.copy_entity(), f)
+            if os.stat(csv_filename).st_size > 0:
+                with open(csv_filename) as f:
+                    cursor.copy_expert(sql.copy_entity(), f)
 
             cursor.execute("select count(*) from entity")
     else:
