@@ -76,6 +76,11 @@ elif [[ $DATABASE_NAME != "entity" ]]; then
   echo "$EVENT_ID: extracting entity data from $DATABASE"
   cat sql/export_entity.sql | sed "s/\${DATABASE_NAME}/$DATABASE_NAME/g" | sqlite3 "$DATABASE"
 
+  if [ $? != 0 ]; then
+    echo "Failed to export data from $DATABASE"
+    exit 1
+  fi
+
   # If exported_old_entity is blank, check there are no records in the sqlite database.
   # If there aren't, then replace the file with the headers, so it will be processed.
   if [ ! -s exported_old_entity.csv ]; then
