@@ -52,24 +52,24 @@ def get_valid_datasets(specification):
 
 @click.command()
 @click.option("--source", required=True)
-@click.option("--database", required=True)
+@click.option("--sqlite-db", required=True)
 @click.option(
     "--specification-dir", type=click.Path(exists=True), default="specification/"
 )
-def do_replace_cli(source, database, specification_dir):
+def do_replace_cli(source, sqlite_db, specification_dir):
     specification = Specification(path=specification_dir)
-    db_conn = sqlite3.connect(database)
+    sqlite_conn = sqlite3.connect(sqlite_db)
     valid_datasets = get_valid_datasets(specification)
 
     if source == "digital-land" or source in valid_datasets:
-        do_replace(source, db_conn)
+        do_replace(source, sqlite_conn)
         if source == "digital-land":
             remove_invalid_datasets(valid_datasets)
 
     return
 
 
-def get_connection():
+def get_pg_connection():
     try:
         url = urlparse.urlparse(os.getenv("WRITE_DATABASE_URL"))
         database = url.path[1:]
@@ -126,7 +126,7 @@ def do_replace_table(table, source, csv_filename, postgress_conn, sqlite_conn):
         make_valid_with_handle_geometry_collection(postgress_conn, source)
 
 
-def do_replace(source, db_conn, tables_to_export=None):
+def do_replace(source, sqlite_conn, tables_to_export=None):
     if tables_to_export is None:
         tables_to_export = export_tables[source]
 
@@ -135,7 +135,7 @@ def do_replace(source, db_conn, tables_to_export=None):
 
         csv_filename = f"exported_{table}.csv"
 
-        do_replace_table(table, source, csv_filename, get_connection(), db_conn)
+        do_replace_table(table, source, csv_filename, get_pg_connection(), sqlite_conn)
 
 
 def remove_invalid_datasets(valid_datasets):
@@ -144,7 +144,7 @@ def remove_invalid_datasets(valid_datasets):
     from the postgres database. This keeps the site aligned with the spec
     """
     valid_datasets_str = "', '".join(valid_datasets)
-    connection = get_connection()
+    connection = get_pg_connection()
     # remove datasets not in valid_datasets from entity
     with connection.cursor() as cursor:
         sql = f"""
