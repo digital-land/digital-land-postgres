@@ -6,6 +6,7 @@ import csv
 import psycopg2.extensions
 import urllib.parse as urlparse
 import click
+import sqlite3
 
 # load in specification
 from digital_land.specification import Specification
@@ -51,15 +52,17 @@ def get_valid_datasets(specification):
 
 @click.command()
 @click.option("--source", required=True)
+@click.option("--database", required=True)
 @click.option(
     "--specification-dir", type=click.Path(exists=True), default="specification/"
 )
-def do_replace_cli(source, specification_dir):
+def do_replace_cli(source, database, specification_dir):
     specification = Specification(path=specification_dir)
+    db_conn = sqlite3.connect(database)
     valid_datasets = get_valid_datasets(specification)
 
     if source == "digital-land" or source in valid_datasets:
-        do_replace(source)
+        do_replace(source, db_conn)
         if source == "digital-land":
             remove_invalid_datasets(valid_datasets)
 
@@ -92,34 +95,47 @@ def get_connection():
     return connection
 
 
-def do_replace(source, tables_to_export=None):
+def do_replace_table(table, source, csv_filename, postgress_conn, sqlite_conn):
+    with open(csv_filename, "r") as f:
+        reader = csv.DictReader(f, delimiter="|")
+        fieldnames = reader.fieldnames
+
+    sql = SQL(table=table, fields=fieldnames, source=source)
+
+    # If we don't get any fieldnames, the file is probably blank. Check the table in the sqlite3.
+    if not fieldnames:
+        rows = (
+            sqlite_conn.cursor().execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+        )
+        if rows == 0:
+            if source not in ["digital-land", "entity"]:
+                with postgress_conn.cursor() as cursor:
+                    cursor.execute(sql.update_tables())
+                postgress_conn.commit()
+
+    with postgress_conn.cursor() as cursor:
+        call_sql_queries(source, table, csv_filename, fieldnames, sql, cursor)
+
+    postgress_conn.commit()
+
+    logger.info(f"Finished loading from database: {source} table: {table}")
+
+    if source != "entity" and table == "entity":
+        make_valid_multipolygon(postgress_conn, source)
+
+        make_valid_with_handle_geometry_collection(postgress_conn, source)
+
+
+def do_replace(source, db_conn, tables_to_export=None):
     if tables_to_export is None:
         tables_to_export = export_tables[source]
-
-    connection = get_connection()
 
     for table in tables_to_export:
         logger.info(f"Loading from database: {source} table: {table}")
 
         csv_filename = f"exported_{table}.csv"
 
-        with open(csv_filename, "r") as f:
-            reader = csv.DictReader(f, delimiter="|")
-            fieldnames = reader.fieldnames
-
-        sql = SQL(table=table, fields=fieldnames, source=source)
-
-        with connection.cursor() as cursor:
-            call_sql_queries(source, table, csv_filename, fieldnames, sql, cursor)
-
-        connection.commit()
-
-        logger.info(f"Finished loading from database: {source} table: {table}")
-
-        if source != "entity" and table == "entity":
-            make_valid_multipolygon(connection, source)
-
-            make_valid_with_handle_geometry_collection(connection, source)
+        do_replace_table(table, source, csv_filename, get_connection(), db_conn)
 
 
 def remove_invalid_datasets(valid_datasets):

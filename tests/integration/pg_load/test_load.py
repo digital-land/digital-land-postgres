@@ -2,6 +2,7 @@ import csv
 import os
 import sys
 import pytest
+import sqlite3
 
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
 sys.path.insert(0, parent_dir)
@@ -11,6 +12,7 @@ from task.pgload.load import (  # noqa: E402
     SQL,
     call_sql_queries,
     export_tables,
+    do_replace_table,
 )
 
 
@@ -112,31 +114,43 @@ def test_unretired_entities(postgresql_conn):
     source = "certificate-of-immunity"
     table = "old_entity"
 
-    for file in ["exported_old_entity_1.csv", "exported_old_entity_2.csv"]:
-        csv_filename = os.path.join("tests/test_unretired/", file)
+    test_conn2 = sqlite3.connect(":memory:")
+    test_conn2.cursor().execute(""";""")
 
-        with open(csv_filename, "r") as f:
-            reader = csv.DictReader(f, delimiter="|")
-            fieldnames = reader.fieldnames
-
-        sql = SQL(table=table, fields=fieldnames, source=source)
-
-        with postgresql_conn.cursor() as cursor:
-            call_sql_queries(
-                source,
-                table,
-                csv_filename,
-                fieldnames,
-                sql,
-                cursor,
+    def make_sqlite3_conn(rows):
+        test_conn = sqlite3.connect(":memory:")
+        test_conn.cursor().execute(
+            "CREATE TABLE old_entity ("
+            "end_date TEXT, entity INTEGER, entry_date TEXT, notes TEXT, "
+            "old_entity TEXT PRIMARY KEY, start_date TEXT, status TEXT)"
+        )
+        for row in rows:
+            test_conn.cursor().execute(
+                "INSERT INTO old_entity VALUES (?, ?, ?, ?, ?, ?, ?)", row
             )
 
-        postgresql_conn.commit()
+        return test_conn
 
-    cursor = postgresql_conn.cursor()
-    cursor.execute(
-        "SELECT COUNT(*) FROM old_entity WHERE old_entity >= 2300000 AND old_entity <= 2300100",
-    )
-    rowcount = cursor.fetchone()[0]
-    cursor.close()
-    assert rowcount == 1
+    for filename, sqlite_conn, expected_count in [
+        ("exported_old_entity_2.csv", make_sqlite3_conn([]), 1),
+        ("exported_old_entity_3.csv", make_sqlite3_conn([]), 0),
+        ("exported_old_entity_4.csv", make_sqlite3_conn([]), 0),
+        ("exported_old_entity_4.csv", make_sqlite3_conn([]), 0),
+        (
+            "exported_old_entity_4.csv",
+            make_sqlite3_conn([("", "", "", "", "2300000", "", "")]),
+            5,
+        ),
+    ]:
+        for file in ["exported_old_entity_1.csv", filename]:
+            csv_filename = os.path.join("tests/test_data/", file)
+
+            do_replace_table(table, source, csv_filename, postgresql_conn, sqlite_conn)
+
+        cursor = postgresql_conn.cursor()
+        cursor.execute(
+            "SELECT COUNT(*) FROM old_entity WHERE old_entity >= 2300000 AND old_entity <= 2300100",
+        )
+        rowcount = cursor.fetchone()[0]
+        cursor.close()
+        assert rowcount == expected_count
