@@ -114,9 +114,6 @@ def test_unretired_entities(postgresql_conn):
     source = "certificate-of-immunity"
     table = "old_entity"
 
-    test_conn2 = sqlite3.connect(":memory:")
-    test_conn2.cursor().execute(""";""")
-
     def make_sqlite3_conn(rows):
         test_conn = sqlite3.connect(":memory:")
         test_conn.cursor().execute(
