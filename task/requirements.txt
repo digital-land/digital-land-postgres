@@ -2,3 +2,4 @@
 click==8.0.3
 psycopg2-binary==2.9.3
 requests
+datasette<0.65.0

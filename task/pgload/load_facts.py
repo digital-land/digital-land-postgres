@@ -73,7 +73,6 @@ def load_facts():
 
 
 def load_facts_into_postgres(rows):
-
     url = urlparse.urlparse(os.getenv("WRITE_DATABASE_URL"))
     database = url.path[1:]
     user = url.username

@@ -11,6 +11,7 @@ RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2
 ADD . /src
 WORKDIR /src
 
+RUN python3 --version
 RUN pip install --user -U pip
 RUN pip install --user --no-cache-dir -r requirements.txt
 

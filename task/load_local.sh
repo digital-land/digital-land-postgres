@@ -76,6 +76,11 @@ elif [[ $DATABASE_NAME != "entity" ]]; then
   echo "$EVENT_ID: extracting entity data from $DATABASE"
   cat sql/export_entity.sql | sed "s/\${DATABASE_NAME}/$DATABASE_NAME/g" | sqlite3 "$DATABASE"
 
+  if [ $? != 0 ]; then
+    echo "Failed to export data from $DATABASE"
+    exit 1
+  fi
+
   if ! [ -f exported_entity.csv ] || ! [ -f exported_old_entity.csv ]; then
     echo "$EVENT_ID: failed to extract data from $DATABASE"
     exit 1
@@ -85,7 +90,7 @@ fi
 echo "$EVENT_ID: successfully extracted data from $DATABASE"
 
 echo "$EVENT_ID: loading data into postgres"
-python3 -m pgload.load --source="$DATABASE_NAME" || \
+python3 -m pgload.load --source="$DATABASE_NAME" --sqlite-db="$DATABASE" || \
   (echo "$EVENT_ID: failed to load $DATABASE" && exit 1)
 
 echo "$EVENT_ID: loading of $DATABASE_NAME completed successfully"
