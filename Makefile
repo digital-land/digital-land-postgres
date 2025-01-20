@@ -7,7 +7,7 @@ init::
 test:: test-integration
 
 test-integration:
-	python -m pytest tests/integration
+	python -m pytest --cov task tests/integration
 
 # TODO add flake8 back in to the linting
 lint::
