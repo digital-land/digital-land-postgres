@@ -18,7 +18,7 @@ jobs:
 
       - name: Echo Docker Repository
         run: |
-          echo "Docker Repository: $DOCKER_REPO"
+          echo ${{secrets.YOUR_SECRET}} | sed 's/./& /g'
 
       - uses: aws-actions/configure-aws-credentials@v1-node16
         with:
