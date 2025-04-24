@@ -227,7 +227,7 @@ def update_entity_subdivided(connection, source):
     
     update_entity_subdivided = """
         INSERT INTO entity_subdivided (entity, dataset, geometry_subdivided)
-            SELECT e.entity, e.dataset, g.geom
+            SELECT e.entity, e.dataset, ST_Multi(g.geom)
             FROM entity e
             JOIN LATERAL (
             SELECT (ST_Dump(ST_Subdivide(ST_MakeValid(e.geometry)))).geom
