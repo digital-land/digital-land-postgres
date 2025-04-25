@@ -34,7 +34,7 @@ jobs:
     env:
       READ_DATABASE_URL: postgresql://postgres:postgres@localhost/digital_land_test
       WRITE_DATABASE_URL: postgresql://postgres:postgres@localhost/digital_land_test
-      ENVIRONMENT: development
+      ENVIRONMENT: staging
       PGPASSWORD: postgres
     steps:
       - uses: actions/checkout@v4
