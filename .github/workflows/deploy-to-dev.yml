@@ -16,9 +16,6 @@ jobs:
       - id: vars
         run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
-      - name: Echo Docker Repository
-        run: echo ${{secrets.DEPLOY_DOCKER_REPOSITORY}} | sed 's/./& /g'
-
       - uses: aws-actions/configure-aws-credentials@v1-node16
         with:
           aws-access-key-id: ${{ secrets.DEPLOY_AWS_ACCESS_KEY_ID }}
