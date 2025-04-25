@@ -1,0 +1,87 @@
+ 
+
+name: Deploy To Staging
+
+on: [workflow_dispatch]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.8
+      - run: make init
+      - run: make lint
+
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgis/postgis:14-master
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    env:
+      READ_DATABASE_URL: postgresql://postgres:postgres@localhost/digital_land_test
+      WRITE_DATABASE_URL: postgresql://postgres:postgres@localhost/digital_land_test
+      ENVIRONMENT: staging
+      PGPASSWORD: postgres
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.8
+
+      - run: make init
+
+      - name: Setup database
+        run: |
+          psql -h localhost -c "CREATE DATABASE digital_land_test WITH TEMPLATE postgres" -U postgres
+
+      - name: Unit Tests
+        run: |
+          make test
+
+
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      DOCKER_REPO: ${{ secrets.DEPLOY_DOCKER_REPOSITORY }}
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: vars
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - uses: aws-actions/configure-aws-credentials@v1-node16
+        with:
+          aws-access-key-id: ${{ secrets.DEPLOY_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.DEPLOY_AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-2
+
+      - uses: aws-actions/amazon-ecr-login@v1
+
+      - run: docker pull $DOCKER_REPO:latest || echo "no current latest image"
+
+      - run: docker build -t $DOCKER_REPO:${{ steps.vars.outputs.sha_short }} .
+        working-directory: ./task
+
+      - run: docker tag $DOCKER_REPO:${{ steps.vars.outputs.sha_short }} $DOCKER_REPO:latest
+
+      - run: docker push $DOCKER_REPO:${{ steps.vars.outputs.sha_short }}
+
+      - run: docker push $DOCKER_REPO:latest
