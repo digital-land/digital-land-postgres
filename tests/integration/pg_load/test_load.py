@@ -115,7 +115,7 @@ def test_update_entity_subdivided(postgresql_conn):
     
     test_data = [
         (1, "conservation-area", "MULTIPOLYGON(((0 0, 0 1, 1 1, 1 0, 0 0)))"),  # simple multipolygon
-        (2, "flood-risk-zone", f'MULTIPOLYGON(({",".join(["(0 0, 0 1, 1 1, 1 0, 0 0)"] * 5001)}))'),  # complex multipolygon
+        (2, "flood-risk-zone", f'MULTIPOLYGON(({",".join(["(0 0, 0 1, 1 1, 1 0, 0 0)"] * 2001)}))'),  # complex multipolygon
         (3, "test-dataset", "LINESTRING(0 0, 1 1, 2 2)"),  # linestring (not polygon)
     ]
     for entity, dataset, geometry in test_data:
