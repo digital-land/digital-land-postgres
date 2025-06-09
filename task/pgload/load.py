@@ -26,7 +26,6 @@ formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(messag
 streamHandler.setFormatter(formatter)
 logger.addHandler(streamHandler)
 
-complex_geom_datasets = ['flood-risk-zone']
 export_tables = {
     DATABASE_NAME: ["entity", "old_entity"],
     "digital-land": [
@@ -126,8 +125,7 @@ def do_replace_table(table, source, csv_filename, postgress_conn, sqlite_conn):
 
         make_valid_with_handle_geometry_collection(postgress_conn, source)
 
-        if source in complex_geom_datasets:
-            update_entity_subdivided(postgress_conn,source)
+        update_entity_subdivided(postgress_conn)
 
 
 def do_replace(source, sqlite_conn, tables_to_export=None):
@@ -220,36 +218,34 @@ def make_valid_multipolygon(connection, source):
 
     logger.info(f"Updated {rowcount} rows with valid multi polygons")
 
-def update_entity_subdivided(connection, source):   
-    delete_sql = """
-            DELETE FROM entity_subdivided WHERE dataset = %s ;
-        """
-    
-    update_entity_subdivided = """
+def update_entity_subdivided(connection):
+    delete_sql = "DELETE FROM entity_subdivided"
+    insert_sql = """
         INSERT INTO entity_subdivided (entity, dataset, geometry_subdivided)
-            SELECT e.entity, e.dataset, ST_Multi(g.geom)
-            FROM entity e
-            JOIN LATERAL (
+        SELECT e.entity, e.dataset, ST_Multi(g.geom)
+        FROM entity e
+        JOIN LATERAL (
             SELECT (ST_Dump(ST_Subdivide(ST_MakeValid(e.geometry)))).geom
-            ) AS g ON true
-            WHERE dataset = %s 
-            AND e.geometry IS NOT NULL
-            AND ST_IsValid(e.geometry);
-
-        """.strip()
+        ) AS g ON true
+        WHERE e.geometry IS NOT NULL
+          AND (
+              NOT ST_IsValid(e.geometry)
+              OR ST_NPoints(e.geometry) > 10000
+          )
+          AND GeometryType(g.geom) IN ('POLYGON', 'MULTIPOLYGON');
+    """
 
     with connection.cursor() as cursor:
-        
-        cursor.execute(delete_sql, (source,))
+        cursor.execute(delete_sql)
         deleted_count = cursor.rowcount
 
-        cursor.execute(update_entity_subdivided, (source,))
+        cursor.execute(insert_sql)
         rowcount = cursor.rowcount
 
     connection.commit()
+    logger.info(f"Updated entity_subdivided table - {deleted_count} rows deleted")
+    logger.info(f"Updated entity_subdivided table - {rowcount} rows with subdivided geometries")
 
-    logger.info(f"Updated entity_sub_divided table - {deleted_count} rows deleted")
-    logger.info(f"Updated entity_sub_divided table - {rowcount} rows with subdivided geometries")
 
 if __name__ == "__main__":
     do_replace_cli()
