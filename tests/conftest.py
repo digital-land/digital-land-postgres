@@ -179,6 +179,16 @@ def create_db(postgresql_conn):
         )"""
     )
 
+    cursor.execute(
+        """
+        CREATE TABLE entity_subdivided (
+            entity_subdivided_id BIGSERIAL PRIMARY KEY,
+            entity bigint,
+            dataset text,
+            geometry_subdivided geometry
+        )"""
+    )
+
     with open("tests/test_data/exported_entity.csv", "r") as f:
         reader = csv.reader(f, delimiter="|")
         next(reader)
@@ -397,6 +407,7 @@ def finalizer(request, postgresql_conn):
         cursor.execute("DROP TABLE IF EXISTS lookup;")
         cursor.execute("DROP TABLE IF EXISTS attribution;")
         cursor.execute("DROP TABLE IF EXISTS licence;")
+        cursor.execute("DROP TABLE IF EXISTS entity_subdivided;")
         postgresql_conn.commit()
         cursor.close()
         postgresql_conn.close()

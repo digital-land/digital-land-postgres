@@ -13,6 +13,7 @@ from task.pgload.load import (  # noqa: E402
     call_sql_queries,
     export_tables,
     do_replace_table,
+    update_entity_subdivided,
 )
 
 
@@ -109,7 +110,34 @@ def test_make_valid_with_handle_geometry_collection(postgresql_conn, sources):
     postgresql_conn.commit()
     cursor.close()
 
+def test_update_entity_subdivided(postgresql_conn):
+    cursor = postgresql_conn.cursor()
+    
+    test_data = [
+        (1, "conservation-area", "MULTIPOLYGON(((0 0, 0 1, 1 1, 1 0, 0 0)))"),  # simple multipolygon
+        (2, "flood-risk-zone", f'MULTIPOLYGON(({",".join(["(0 0, 0 1, 1 1, 1 0, 0 0)"] * 5001)}))'),  # complex multipolygon
+        (3, "test-dataset", "LINESTRING(0 0, 1 1, 2 2)"),  # linestring (not polygon)
+    ]
+    for entity, dataset, geometry in test_data:
+        cursor.execute(
+            "INSERT INTO entity (entity, dataset, geometry) VALUES (%s, %s, ST_GeomFromText(%s, 4326))",
+            (entity, dataset, geometry),
+        )
+    postgresql_conn.commit()
 
+    update_entity_subdivided(postgresql_conn)
+    cursor.execute("SELECT entity, dataset, GeometryType(geometry_subdivided) FROM entity_subdivided")
+    results = cursor.fetchall()
+
+    # Validate
+    inserted_entities = {row[0] for row in results}
+
+    assert 1 not in inserted_entities 
+    assert 2 in inserted_entities 
+    assert 3 not in inserted_entities
+
+    cursor.close()
+    
 def test_unretired_entities(postgresql_conn):
     source = "certificate-of-immunity"
     table = "old_entity"
