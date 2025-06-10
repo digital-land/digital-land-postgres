@@ -19,6 +19,7 @@ from pgload.sql import SQL  # noqa: E402
 csv.field_size_limit(sys.maxsize)
 
 subdivided_point_threshold = int(os.getenv("point_threshold"))
+
 DATABASE_NAME = os.getenv("DATABASE_NAME")
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -246,6 +247,7 @@ def update_entity_subdivided(connection, source, subdivided_point_threshold):
         rowcount = cursor.rowcount
 
     connection.commit()
+    logger.info(f"subdivided_point_threshold: {subdivided_point_threshold}")
     logger.info(f"Updated entity_subdivided table - {deleted_count} rows deleted")
     logger.info(f"Updated entity_subdivided table - {rowcount} rows with subdivided geometries")
 

@@ -16,13 +16,16 @@ from task.pgload.load import (  # noqa: E402
     update_entity_subdivided,
 )
 
-
 # fixture to set source
 @pytest.fixture(scope="module")
 def sources():
     data = ["article-4-direction", "digital-land", "ancient-woodland"]
     return data
 
+@pytest.fixture(scope="module")
+def subdivided_point_threshold():
+    value = os.getenv("point_threshold", "10000")
+    return int(value)
 
 # function to check if invalid data is updated correctly
 def multipolygon_check(cursor, source):
@@ -110,13 +113,13 @@ def test_make_valid_with_handle_geometry_collection(postgresql_conn, sources):
     postgresql_conn.commit()
     cursor.close()
 
-def test_update_entity_subdivided(postgresql_conn):
+def test_update_entity_subdivided(postgresql_conn, sources, subdivided_point_threshold):
     cursor = postgresql_conn.cursor()
     
     test_data = [
-        (1, "conservation-area", "MULTIPOLYGON(((0 0, 0 1, 1 1, 1 0, 0 0)))"),  # simple multipolygon
-        (2, "flood-risk-zone", f'MULTIPOLYGON(({",".join(["(0 0, 0 1, 1 1, 1 0, 0 0)"] * 2001)}))'),  # complex multipolygon
-        (3, "test-dataset", "LINESTRING(0 0, 1 1, 2 2)"),  # linestring (not polygon)
+        (1, "article-4-direction", "MULTIPOLYGON(((0 0, 0 1, 1 1, 1 0, 0 0)))"),  # simple multipolygon
+        (2, "digital-land", f'MULTIPOLYGON(({",".join(["(0 0, 0 1, 1 1, 1 0, 0 0)"] * 2001)}))'),  # complex multipolygon
+        (3, "ancient-woodland", "LINESTRING(0 0, 1 1, 2 2)"),  # linestring (not polygon)
     ]
     for entity, dataset, geometry in test_data:
         cursor.execute(
@@ -124,13 +127,13 @@ def test_update_entity_subdivided(postgresql_conn):
             (entity, dataset, geometry),
         )
     postgresql_conn.commit()
+    for source in sources:
+        update_entity_subdivided(postgresql_conn, source, subdivided_point_threshold)
+        cursor.execute("SELECT entity, dataset, GeometryType(geometry_subdivided) FROM entity_subdivided")
+        results = cursor.fetchall()
 
-    update_entity_subdivided(postgresql_conn)
-    cursor.execute("SELECT entity, dataset, GeometryType(geometry_subdivided) FROM entity_subdivided")
-    results = cursor.fetchall()
-
-    # Validate
-    inserted_entities = {row[0] for row in results}
+        # Validate
+        inserted_entities = {row[0] for row in results}
 
     assert 1 not in inserted_entities 
     assert 2 in inserted_entities 
