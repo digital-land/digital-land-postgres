@@ -18,6 +18,7 @@ from pgload.sql import SQL  # noqa: E402
 
 csv.field_size_limit(sys.maxsize)
 
+subdivided_point_threshold = int(os.getenv("point_threshold"))
 DATABASE_NAME = os.getenv("DATABASE_NAME")
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -125,7 +126,7 @@ def do_replace_table(table, source, csv_filename, postgress_conn, sqlite_conn):
 
         make_valid_with_handle_geometry_collection(postgress_conn, source)
 
-        update_entity_subdivided(postgress_conn)
+        update_entity_subdivided(postgress_conn, source, subdivided_point_threshold)
 
 
 def do_replace(source, sqlite_conn, tables_to_export=None):
@@ -218,8 +219,10 @@ def make_valid_multipolygon(connection, source):
 
     logger.info(f"Updated {rowcount} rows with valid multi polygons")
 
-def update_entity_subdivided(connection):
-    delete_sql = "DELETE FROM entity_subdivided"
+def update_entity_subdivided(connection, source, subdivided_point_threshold):
+    delete_sql = """
+        DELETE FROM entity_subdivided WHERE dataset = %s
+    """
     insert_sql = """
         INSERT INTO entity_subdivided (entity, dataset, geometry_subdivided)
         SELECT e.entity, e.dataset, ST_Multi(g.geom)
@@ -227,19 +230,19 @@ def update_entity_subdivided(connection):
         JOIN LATERAL (
             SELECT (ST_Dump(ST_Subdivide(ST_MakeValid(e.geometry)))).geom
         ) AS g ON true
-        WHERE e.geometry IS NOT NULL
+        WHERE e.dataset = %s
+          AND e.geometry IS NOT NULL
           AND (
               NOT ST_IsValid(e.geometry)
-              OR ST_NPoints(e.geometry) > 10000
+              OR ST_NPoints(e.geometry) > %s
           )
-          AND GeometryType(g.geom) IN ('POLYGON', 'MULTIPOLYGON');
     """
 
     with connection.cursor() as cursor:
-        cursor.execute(delete_sql)
+        cursor.execute(delete_sql, (source,))
         deleted_count = cursor.rowcount
 
-        cursor.execute(insert_sql)
+        cursor.execute(insert_sql, (source, subdivided_point_threshold))
         rowcount = cursor.rowcount
 
     connection.commit()
