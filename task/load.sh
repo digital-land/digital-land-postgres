@@ -11,6 +11,7 @@ fi
 S3_BUCKET=${BASH_REMATCH[1]%/*}
 S3_KEY=${BASH_REMATCH[2]}
 
+POINT_THRESHOLD=${POINT_THRESHOLD:-10000}
 DATABASE=${S3_KEY##*/}
 export DATABASE_NAME=${DATABASE%.*}
 echo "DATABASE NAME: $DATABASE_NAME"
@@ -90,7 +91,7 @@ fi
 echo "$EVENT_ID: successfully extracted data from $DATABASE"
 
 echo "$EVENT_ID: loading data into postgres"
-python3 -m pgload.load --source="$DATABASE_NAME" --sqlite-db="$DATABASE" || \
+python3 -m pgload.load --source="$DATABASE_NAME" --sqlite-db="$DATABASE" --point-threshold=$POINT_THRESHOLD || \
   (echo "$EVENT_ID: failed to load $DATABASE" && exit 1)
 
 echo "$EVENT_ID: loading of $DATABASE_NAME completed successfully"

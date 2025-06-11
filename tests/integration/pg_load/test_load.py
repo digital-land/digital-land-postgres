@@ -22,11 +22,6 @@ def sources():
     data = ["article-4-direction", "digital-land", "ancient-woodland"]
     return data
 
-@pytest.fixture(scope="module")
-def subdivided_point_threshold():
-    value = os.getenv("point_threshold", "10000")
-    return int(value)
-
 # function to check if invalid data is updated correctly
 def multipolygon_check(cursor, source):
     cursor.execute(
@@ -113,7 +108,8 @@ def test_make_valid_with_handle_geometry_collection(postgresql_conn, sources):
     postgresql_conn.commit()
     cursor.close()
 
-def test_update_entity_subdivided(postgresql_conn, sources, subdivided_point_threshold):
+def test_update_entity_subdivided(postgresql_conn, sources):
+    subdivided_point_threshold = 10000
     cursor = postgresql_conn.cursor()
     
     test_data = [
@@ -142,6 +138,7 @@ def test_update_entity_subdivided(postgresql_conn, sources, subdivided_point_thr
     cursor.close()
     
 def test_unretired_entities(postgresql_conn):
+    subdivided_point_threshold = 10000
     source = "certificate-of-immunity"
     table = "old_entity"
 
@@ -173,7 +170,7 @@ def test_unretired_entities(postgresql_conn):
         for file in ["exported_old_entity_1.csv", filename]:
             csv_filename = os.path.join("tests/test_data/", file)
 
-            do_replace_table(table, source, csv_filename, postgresql_conn, sqlite_conn)
+            do_replace_table(table, source, csv_filename, postgresql_conn, sqlite_conn, subdivided_point_threshold)
 
         cursor = postgresql_conn.cursor()
         cursor.execute(

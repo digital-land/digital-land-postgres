@@ -18,8 +18,6 @@ from pgload.sql import SQL  # noqa: E402
 
 csv.field_size_limit(sys.maxsize)
 
-subdivided_point_threshold = int(os.getenv("point_threshold"))
-
 DATABASE_NAME = os.getenv("DATABASE_NAME")
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -58,13 +56,14 @@ def get_valid_datasets(specification):
 @click.option(
     "--specification-dir", type=click.Path(exists=True), default="specification/"
 )
-def do_replace_cli(source, sqlite_db, specification_dir):
+@click.option("--point-threshold", default=10000, type=int, help="threshold for geometry subdivision")
+def do_replace_cli(source, sqlite_db, specification_dir, point_threshold):
     specification = Specification(path=specification_dir)
     sqlite_conn = sqlite3.connect(sqlite_db)
     valid_datasets = get_valid_datasets(specification)
 
     if source == "digital-land" or source in valid_datasets:
-        do_replace(source, sqlite_conn)
+        do_replace(source, sqlite_conn, point_threshold=point_threshold)
         if source == "digital-land":
             remove_invalid_datasets(valid_datasets)
 
@@ -97,7 +96,7 @@ def get_pg_connection():
     return connection
 
 
-def do_replace_table(table, source, csv_filename, postgress_conn, sqlite_conn):
+def do_replace_table(table, source, csv_filename, postgress_conn, sqlite_conn, point_threshold):
     with open(csv_filename, "r") as f:
         reader = csv.DictReader(f, delimiter="|")
         fieldnames = reader.fieldnames
@@ -127,10 +126,10 @@ def do_replace_table(table, source, csv_filename, postgress_conn, sqlite_conn):
 
         make_valid_with_handle_geometry_collection(postgress_conn, source)
 
-        update_entity_subdivided(postgress_conn, source, subdivided_point_threshold)
+        update_entity_subdivided(postgress_conn, source, point_threshold)
 
 
-def do_replace(source, sqlite_conn, tables_to_export=None):
+def do_replace(source, sqlite_conn, tables_to_export=None, point_threshold=10000):
     if tables_to_export is None:
         tables_to_export = export_tables[source]
 
@@ -139,7 +138,7 @@ def do_replace(source, sqlite_conn, tables_to_export=None):
 
         csv_filename = f"exported_{table}.csv"
 
-        do_replace_table(table, source, csv_filename, get_pg_connection(), sqlite_conn)
+        do_replace_table(table, source, csv_filename, get_pg_connection(), sqlite_conn, point_threshold=point_threshold)
 
 
 def remove_invalid_datasets(valid_datasets):

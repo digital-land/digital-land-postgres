@@ -7,7 +7,7 @@ init::
 test:: test-integration
 
 test-integration:
-	point_threshold=10000 python -m pytest --cov task tests/integration
+	python -m pytest --cov task tests/integration
 
 # TODO add flake8 back in to the linting
 lint::
