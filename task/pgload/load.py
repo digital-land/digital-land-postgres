@@ -126,6 +126,7 @@ def do_replace_table(table, source, csv_filename, postgress_conn, sqlite_conn, p
 
         make_valid_with_handle_geometry_collection(postgress_conn, source)
 
+    if table == "entity":
         update_entity_subdivided(postgress_conn, source, point_threshold)
 
 
