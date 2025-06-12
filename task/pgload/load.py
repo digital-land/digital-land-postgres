@@ -63,7 +63,7 @@ def do_replace_cli(source, sqlite_db, specification_dir, point_threshold):
     valid_datasets = get_valid_datasets(specification)
 
     if source == "digital-land" or source in valid_datasets:
-        do_replace(source, sqlite_conn, point_threshold=point_threshold)
+        do_replace(source, sqlite_conn, point_threshold=point_threshold, valid_datasets=valid_datasets)
         if source == "digital-land":
             remove_invalid_datasets(valid_datasets)
 
@@ -96,7 +96,7 @@ def get_pg_connection():
     return connection
 
 
-def do_replace_table(table, source, csv_filename, postgress_conn, sqlite_conn, point_threshold):
+def do_replace_table(table, source, csv_filename, postgress_conn, sqlite_conn, point_threshold, valid_datasets):
     with open(csv_filename, "r") as f:
         reader = csv.DictReader(f, delimiter="|")
         fieldnames = reader.fieldnames
@@ -125,12 +125,12 @@ def do_replace_table(table, source, csv_filename, postgress_conn, sqlite_conn, p
         make_valid_multipolygon(postgress_conn, source)
 
         make_valid_with_handle_geometry_collection(postgress_conn, source)
+        
+        if source in valid_datasets:
+            update_entity_subdivided(postgress_conn, source, point_threshold)
 
-    if table == "entity":
-        update_entity_subdivided(postgress_conn, source, point_threshold)
 
-
-def do_replace(source, sqlite_conn, tables_to_export=None, point_threshold=10000):
+def do_replace(source, sqlite_conn, tables_to_export=None, point_threshold=10000, valid_datasets=None):
     if tables_to_export is None:
         tables_to_export = export_tables[source]
 
@@ -139,7 +139,7 @@ def do_replace(source, sqlite_conn, tables_to_export=None, point_threshold=10000
 
         csv_filename = f"exported_{table}.csv"
 
-        do_replace_table(table, source, csv_filename, get_pg_connection(), sqlite_conn, point_threshold=point_threshold)
+        do_replace_table(table, source, csv_filename, get_pg_connection(), sqlite_conn, point_threshold=point_threshold, valid_datasets=valid_datasets)
 
 
 def remove_invalid_datasets(valid_datasets):

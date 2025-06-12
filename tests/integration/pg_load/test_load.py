@@ -141,6 +141,7 @@ def test_unretired_entities(postgresql_conn):
     subdivided_point_threshold = 10000
     source = "certificate-of-immunity"
     table = "old_entity"
+    valid_datasets = "certificate-of-immunity"
 
     def make_sqlite3_conn(rows):
         test_conn = sqlite3.connect(":memory:")
@@ -170,7 +171,7 @@ def test_unretired_entities(postgresql_conn):
         for file in ["exported_old_entity_1.csv", filename]:
             csv_filename = os.path.join("tests/test_data/", file)
 
-            do_replace_table(table, source, csv_filename, postgresql_conn, sqlite_conn, subdivided_point_threshold)
+            do_replace_table(table, source, csv_filename, postgresql_conn, sqlite_conn, subdivided_point_threshold, valid_datasets)
 
         cursor = postgresql_conn.cursor()
         cursor.execute(
