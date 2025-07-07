@@ -1,5 +1,6 @@
 #! /usr/bin/env bash
 # need to use the files cdn instead of the bucket name when loading locally without logging into aws
+set -e
 
 s3_object_arn_regex="^arn:aws:s3:::([0-9A-Za-z-]*/)(.*)$"
 
@@ -22,7 +23,7 @@ echo "$EVENT_ID: running with settings: S3_BUCKET=$S3_BUCKET, S3_KEY=$S3_KEY, DA
 
 # download specification
 export SOURCE_URL=https://raw.githubusercontent.com/digital-land/
-mkdir -p specification/
+mkdir -p ./specification/
 curl -qfsL $SOURCE_URL/specification/main/specification/attribution.csv > specification/attribution.csv
 curl -qfsL $SOURCE_URL/specification/main/specification/licence.csv > specification/licence.csv
 curl -qfsL $SOURCE_URL/specification/main/specification/typology.csv > specification/typology.csv
