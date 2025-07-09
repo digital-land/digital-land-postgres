@@ -105,7 +105,11 @@ SELECT
     nullif(l.reference, "") as reference,
     nullif(l.entry_date, "") as entry_date,
     nullif(l.start_date, "") as start_date,
-    nullif(l.value, "") as value
+    nullif(l.end_date, "") as end_date,
+    nullif(l.endpoint, "") as endpoint,
+    nullif(l.organisation, "") as organisation,
+    nullif(l.resource, "") as resource,
+    nullif(l.entry_number, "") as entry_number
 FROM lookup l;
 
 
