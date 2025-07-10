@@ -35,7 +35,7 @@ export_tables = {
         "organisation",
         "dataset_collection",
         "dataset_publication",
-        "lookup",
+        # "lookup", TODO add this back in after we update the lookup table
         "attribution",
         "licence",
     ],
