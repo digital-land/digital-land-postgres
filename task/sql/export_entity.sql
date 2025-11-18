@@ -17,7 +17,8 @@ SELECT
     nullif(e.typology, "") as typology,
     nullif(e.geojson, "") as geojson,
     nullif(e.geometry, "") as geometry,
-    nullif(e.point, "") as point
+    nullif(e.point, "") as point,
+    nullif(e.quality, "") as quality
 FROM entity e;
 
 .output exported_old_entity.csv

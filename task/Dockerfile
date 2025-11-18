@@ -1,7 +1,7 @@
-FROM ubuntu:20.04
+FROM python:3.9-slim-bookworm
 
 RUN apt-get update \
-    && apt-get install -y curl sqlite python3-pip unzip git \
+    && apt-get install -y curl sqlite3 unzip git \
     && apt-get clean
 
 RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
@@ -12,7 +12,7 @@ ADD . /src
 WORKDIR /src
 
 RUN python3 --version
-RUN pip install --user -U pip
-RUN pip install --user --no-cache-dir -r requirements.txt
+RUN pip install --upgrade pip setuptools wheel
+RUN pip install --no-cache-dir -r requirements.txt
 
 ENTRYPOINT [ "./load.sh" ]

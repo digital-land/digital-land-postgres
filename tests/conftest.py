@@ -41,7 +41,8 @@ def create_db(postgresql_conn):
             typology varchar,
             geojson varchar,
             geometry geometry null,
-            point varchar
+            point varchar,
+            quality varchar null
         )"""
     )
     cursor.execute(
@@ -199,8 +200,9 @@ def create_db(postgresql_conn):
                     typology,
                     geojson,
                     geometry,
-                    point
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    point,
+                    quality
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """,
                 row,
             )
