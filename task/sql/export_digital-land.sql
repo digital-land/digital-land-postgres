@@ -28,7 +28,6 @@ SELECT
     nullif(d.entity_maximum, "") as entity_maximum,
     nullif(d.phase, "") as phase,
     nullif(d.realm, "") as realm,
-    nullif(d.version, "") as version,
     nullif(d.replacement_dataset, "") as replacement_dataset
 FROM dataset d, dataset_theme dt
 WHERE d.dataset = dt.dataset
