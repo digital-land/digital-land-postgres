@@ -26,7 +26,6 @@ formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(messag
 streamHandler.setFormatter(formatter)
 logger.addHandler(streamHandler)
 
-complex_geom_datasets = ['flood-risk-zone']
 export_tables = {
     DATABASE_NAME: ["entity", "old_entity"],
     "digital-land": [
@@ -57,13 +56,14 @@ def get_valid_datasets(specification):
 @click.option(
     "--specification-dir", type=click.Path(exists=True), default="specification/"
 )
-def do_replace_cli(source, sqlite_db, specification_dir):
+@click.option("--point-threshold", default=10000, type=int, help="threshold for geometry subdivision")
+def do_replace_cli(source, sqlite_db, specification_dir, point_threshold):
     specification = Specification(path=specification_dir)
     sqlite_conn = sqlite3.connect(sqlite_db)
     valid_datasets = get_valid_datasets(specification)
 
     if source == "digital-land" or source in valid_datasets:
-        do_replace(source, sqlite_conn)
+        do_replace(source, sqlite_conn, point_threshold=point_threshold, valid_datasets=valid_datasets)
         if source == "digital-land":
             remove_invalid_datasets(valid_datasets)
 
@@ -96,7 +96,7 @@ def get_pg_connection():
     return connection
 
 
-def do_replace_table(table, source, csv_filename, postgress_conn, sqlite_conn):
+def do_replace_table(table, source, csv_filename, postgress_conn, sqlite_conn, point_threshold, valid_datasets):
     with open(csv_filename, "r") as f:
         reader = csv.DictReader(f, delimiter="|")
         fieldnames = reader.fieldnames
@@ -125,12 +125,12 @@ def do_replace_table(table, source, csv_filename, postgress_conn, sqlite_conn):
         make_valid_multipolygon(postgress_conn, source)
 
         make_valid_with_handle_geometry_collection(postgress_conn, source)
+        
+        if source in valid_datasets:
+            update_entity_subdivided(postgress_conn, source, point_threshold)
 
-        if source in complex_geom_datasets:
-            update_entity_subdivided(postgress_conn,source)
 
-
-def do_replace(source, sqlite_conn, tables_to_export=None):
+def do_replace(source, sqlite_conn, tables_to_export=None, point_threshold=10000, valid_datasets=None):
     if tables_to_export is None:
         tables_to_export = export_tables[source]
 
@@ -139,7 +139,7 @@ def do_replace(source, sqlite_conn, tables_to_export=None):
 
         csv_filename = f"exported_{table}.csv"
 
-        do_replace_table(table, source, csv_filename, get_pg_connection(), sqlite_conn)
+        do_replace_table(table, source, csv_filename, get_pg_connection(), sqlite_conn, point_threshold=point_threshold, valid_datasets=valid_datasets)
 
 
 def remove_invalid_datasets(valid_datasets):
@@ -220,36 +220,37 @@ def make_valid_multipolygon(connection, source):
 
     logger.info(f"Updated {rowcount} rows with valid multi polygons")
 
-def update_entity_subdivided(connection, source):   
+def update_entity_subdivided(connection, source, subdivided_point_threshold):
     delete_sql = """
-            DELETE FROM entity_subdivided WHERE dataset = %s ;
-        """
-    
-    update_entity_subdivided = """
+        DELETE FROM entity_subdivided WHERE dataset = %s
+    """
+    insert_sql = """
         INSERT INTO entity_subdivided (entity, dataset, geometry_subdivided)
-            SELECT e.entity, e.dataset, ST_Multi(g.geom)
-            FROM entity e
-            JOIN LATERAL (
+        SELECT e.entity, e.dataset, ST_Multi(g.geom)
+        FROM entity e
+        JOIN LATERAL (
             SELECT (ST_Dump(ST_Subdivide(ST_MakeValid(e.geometry)))).geom
-            ) AS g ON true
-            WHERE dataset = %s 
-            AND e.geometry IS NOT NULL
-            AND ST_IsValid(e.geometry);
-
-        """.strip()
+        ) AS g ON true
+        WHERE e.dataset = %s
+          AND e.geometry IS NOT NULL
+          AND (
+              NOT ST_IsValid(e.geometry)
+              OR ST_NPoints(e.geometry) > %s
+          )
+    """
 
     with connection.cursor() as cursor:
-        
         cursor.execute(delete_sql, (source,))
         deleted_count = cursor.rowcount
 
-        cursor.execute(update_entity_subdivided, (source,))
+        cursor.execute(insert_sql, (source, subdivided_point_threshold))
         rowcount = cursor.rowcount
 
     connection.commit()
+    logger.info(f"subdivided_point_threshold: {subdivided_point_threshold}")
+    logger.info(f"Updated entity_subdivided table - {deleted_count} rows deleted")
+    logger.info(f"Updated entity_subdivided table - {rowcount} rows with subdivided geometries")
 
-    logger.info(f"Updated entity_sub_divided table - {deleted_count} rows deleted")
-    logger.info(f"Updated entity_sub_divided table - {rowcount} rows with subdivided geometries")
 
 if __name__ == "__main__":
     do_replace_cli()

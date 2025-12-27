@@ -9,6 +9,8 @@ fi
 
 S3_KEY=${BASH_REMATCH[2]}
 
+# threshold for complex geometry subdivision
+POINT_THRESHOLD=${POINT_THRESHOLD:-10000}
 # need to use the files cdn instead of the bucket name when loading locally without logging into aws
 DATABASE=${S3_KEY##*/}
 
@@ -91,7 +93,7 @@ fi
 echo "$EVENT_ID: successfully extracted data from $DATABASE"
 
 echo "$EVENT_ID: loading data into postgres"
-python3 -m pgload.load --source="$DATABASE_NAME" --sqlite-db="$DATABASE" || \
+python3 -m pgload.load --source="$DATABASE_NAME" --sqlite-db="$DATABASE" --point-threshold=$POINT_THRESHOLD || \
   (echo "$EVENT_ID: failed to load $DATABASE" && exit 1)
 
 echo "$EVENT_ID: loading of $DATABASE_NAME completed successfully"
