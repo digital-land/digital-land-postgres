@@ -151,8 +151,15 @@ def remove_invalid_datasets(valid_datasets):
     connection = get_pg_connection()
     # remove datasets not in valid_datasets from entity
     with connection.cursor() as cursor:
+        # remove rows from entity that are part of an invalid dataset
         sql = f"""
             DELETE FROM entity WHERE dataset not in ('{valid_datasets_str}');
+        """
+        cursor.execute(sql)
+
+        # now remove ant rows from old_entity that belong to an invalid dataset
+        sql = f"""
+            DELETE FROM old_entity WHERE dataset not in ('{valid_datasets_str}');
         """
         cursor.execute(sql)
 
