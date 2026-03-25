@@ -165,8 +165,6 @@ def remove_invalid_datasets(valid_datasets):
 
     connection.commit()
 
-    # TODO remove old_entities as well but given how the ranges work this isn't important for now
-
 
 def call_sql_queries(source, table, csv_filename, fieldnames, sql, cursor):
     if fieldnames is not None:

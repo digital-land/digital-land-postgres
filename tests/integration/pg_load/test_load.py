@@ -3,6 +3,7 @@ import os
 import sys
 import pytest
 import sqlite3
+from unittest.mock import patch
 
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
 sys.path.insert(0, parent_dir)
@@ -13,6 +14,7 @@ from task.pgload.load import (  # noqa: E402
     call_sql_queries,
     export_tables,
     do_replace_table,
+    remove_invalid_datasets,
 )
 
 
@@ -151,3 +153,32 @@ def test_unretired_entities(postgresql_conn):
         rowcount = cursor.fetchone()[0]
         cursor.close()
         assert rowcount == expected_count
+
+
+def test_remove_invalid_datasets_deletes_from_old_entity(postgresql_conn, create_db):
+    cursor = postgresql_conn.cursor()
+
+    # Insert one row with a valid dataset and one with an invalid dataset
+    cursor.execute(
+        "INSERT INTO old_entity (old_entity, entry_date, start_date, end_date, dataset, notes, status, entity) "
+        "VALUES (9990001, '', '', '', 'valid-dataset', '', '', NULL)"
+    )
+    cursor.execute(
+        "INSERT INTO old_entity (old_entity, entry_date, start_date, end_date, dataset, notes, status, entity) "
+        "VALUES (9990002, '', '', '', 'invalid-dataset', '', '', NULL)"
+    )
+    postgresql_conn.commit()
+    cursor.close()
+
+    with patch("task.pgload.load.get_pg_connection", return_value=postgresql_conn):
+        remove_invalid_datasets(["valid-dataset", "article-4-direction", "ancient-woodland"])
+
+    cursor = postgresql_conn.cursor()
+
+    cursor.execute("SELECT COUNT(*) FROM old_entity WHERE dataset = 'invalid-dataset'")
+    assert cursor.fetchone()[0] == 0, "invalid-dataset rows should be removed from old_entity"
+
+    cursor.execute("SELECT COUNT(*) FROM old_entity WHERE old_entity = 9990001")
+    assert cursor.fetchone()[0] == 1, "valid-dataset row should remain in old_entity"
+
+    cursor.close()
