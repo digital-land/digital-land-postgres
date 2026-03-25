@@ -151,14 +151,19 @@ def remove_invalid_datasets(valid_datasets):
     connection = get_pg_connection()
     # remove datasets not in valid_datasets from entity
     with connection.cursor() as cursor:
+        # remove rows from entity that are part of an invalid dataset
         sql = f"""
             DELETE FROM entity WHERE dataset not in ('{valid_datasets_str}');
         """
         cursor.execute(sql)
 
-    connection.commit()
+        # now remove ant rows from old_entity that belong to an invalid dataset
+        sql = f"""
+            DELETE FROM old_entity WHERE dataset not in ('{valid_datasets_str}');
+        """
+        cursor.execute(sql)
 
-    # TODO remove old_entities as well but given how the ranges work this isn't important for now
+    connection.commit()
 
 
 def call_sql_queries(source, table, csv_filename, fieldnames, sql, cursor):
