@@ -10,6 +10,7 @@ sys.path.insert(0, parent_dir)
 from task.pgload.load import (  # noqa: E402
     make_valid_multipolygon,
     make_valid_with_handle_geometry_collection,
+    remove_unfixable_invalid_geometries,
     SQL,
     call_sql_queries,
     export_tables,
@@ -110,6 +111,82 @@ def test_make_valid_with_handle_geometry_collection(postgresql_conn, sources):
         handle_geometry_collection_check(cursor, source)
     postgresql_conn.commit()
     cursor.close()
+
+
+def test_remove_unfixable_invalid_geometries(postgresql_conn, create_db, tmp_path):
+    source = "article-4-direction"
+    entity = 9999991
+    issue_dir = tmp_path / "issue"
+
+    sqlite_conn = sqlite3.connect(":memory:")
+    sqlite_conn.execute("CREATE TABLE entity (entity INTEGER, dataset TEXT)")
+    sqlite_conn.execute("CREATE TABLE fact (fact TEXT, entity INTEGER, field TEXT)")
+    sqlite_conn.execute(
+        "CREATE TABLE fact_resource (fact TEXT, resource TEXT, entry_number INTEGER)"
+    )
+    sqlite_conn.execute(
+        "CREATE TABLE issue (entity INTEGER, field TEXT, line_number INTEGER)"
+    )
+    sqlite_conn.execute("INSERT INTO entity VALUES (?, ?)", (entity, source))
+    sqlite_conn.execute("INSERT INTO fact VALUES (?, ?, ?)", ("fact-1", entity, "geometry"))
+    sqlite_conn.execute(
+        "INSERT INTO fact_resource VALUES (?, ?, ?)",
+        ("fact-1", "resource-1", 7),
+    )
+    sqlite_conn.execute("INSERT INTO issue VALUES (?, ?, ?)", (entity, "geometry", 9))
+
+    cursor = postgresql_conn.cursor()
+    cursor.execute(
+        """
+            INSERT INTO entity (
+                entity,
+                name,
+                dataset,
+                reference,
+                typology,
+                geometry
+            ) VALUES (
+                %s,
+                'Unfixable invalid geometry',
+                %s,
+                'unfixable-invalid-geometry',
+                'geography',
+                ST_GeomFromText('POLYGON((0 0,1 1,1 0,0 1,0 0))')
+            );
+        """,
+        (entity, source),
+    )
+    postgresql_conn.commit()
+    cursor.close()
+
+    remove_unfixable_invalid_geometries(
+        postgresql_conn, source, sqlite_conn=sqlite_conn, issue_dir=str(issue_dir)
+    )
+
+    cursor = postgresql_conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM entity WHERE entity = %s", (entity,))
+    rowcount = cursor.fetchone()[0]
+    cursor.close()
+
+    assert rowcount == 0
+
+    issue_path = issue_dir / source / "resource-1.csv"
+    with open(issue_path, newline="") as f:
+        rows = list(csv.DictReader(f))
+
+    assert rows == [
+        {
+            "dataset": source,
+            "resource": "resource-1",
+            "line-number": "9",
+            "entry-number": "7",
+            "field": "geometry",
+            "entity": str(entity),
+            "issue-type": "invalid geometry - not fixable",
+            "value": "Self-intersection[0.5 0.5]",
+            "message": "Geometry remained invalid after PostGIS repair",
+        }
+    ]
 
 
 def test_unretired_entities(postgresql_conn):

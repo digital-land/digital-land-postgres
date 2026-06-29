@@ -91,7 +91,8 @@ fi
 echo "$EVENT_ID: successfully extracted data from $DATABASE"
 
 echo "$EVENT_ID: loading data into postgres"
-python3 -m pgload.load --source="$DATABASE_NAME" --sqlite-db="$DATABASE" || \
+ISSUE_DIR=${ISSUE_DIR:-"issue/"}
+python3 -m pgload.load --source="$DATABASE_NAME" --sqlite-db="$DATABASE" --issue-dir="$ISSUE_DIR" || \
   (echo "$EVENT_ID: failed to load $DATABASE" && exit 1)
 
 echo "$EVENT_ID: loading of $DATABASE_NAME completed successfully"
