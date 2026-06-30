@@ -27,7 +27,7 @@ formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(messag
 streamHandler.setFormatter(formatter)
 logger.addHandler(streamHandler)
 
-complex_geom_datasets = ['flood-risk-zone']
+complex_geom_datasets = ["flood-risk-zone"]
 export_tables = {
     DATABASE_NAME: ["entity", "old_entity"],
     "digital-land": [
@@ -58,7 +58,7 @@ def get_valid_datasets(specification):
 @click.option(
     "--specification-dir", type=click.Path(exists=True), default="specification/"
 )
-@click.option("--issue-dir", default="issue")
+@click.option("--issue-dir", envvar="ISSUE_DIR", default="issue")
 def do_replace_cli(source, sqlite_db, specification_dir, issue_dir):
     specification = Specification(path=specification_dir)
     sqlite_conn = sqlite3.connect(sqlite_db)
@@ -135,7 +135,7 @@ def do_replace_table(
         )
 
         if source in complex_geom_datasets:
-            update_entity_subdivided(postgress_conn,source)
+            update_entity_subdivided(postgress_conn, source)
 
 
 def do_replace(source, sqlite_conn, tables_to_export=None, issue_dir="issue"):
@@ -249,49 +249,17 @@ ISSUE_FIELDNAMES = [
 ]
 
 
-def sqlite_table_exists(sqlite_conn, table):
-    cursor = sqlite_conn.execute(
-        "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?", (table,)
-    )
-    return cursor.fetchone() is not None
-
-
-def sqlite_table_columns(sqlite_conn, table):
-    return [row[1] for row in sqlite_conn.execute(f"PRAGMA table_info({table})")]
-
-
 def entity_load_context_rows(sqlite_conn, source):
     if not sqlite_conn:
         return []
 
-    required_tables = ["entity", "fact", "fact_resource"]
-    if not all(sqlite_table_exists(sqlite_conn, table) for table in required_tables):
-        return []
-
-    issue_join = ""
-    issue_selects = "'' AS line_number"
-    if sqlite_table_exists(sqlite_conn, "issue"):
-        issue_columns = sqlite_table_columns(sqlite_conn, "issue")
-        if "entity" in issue_columns and "line_number" in issue_columns:
-            issue_join = """
-                LEFT JOIN (
-                    SELECT entity, field, MIN(line_number) AS line_number
-                    FROM issue
-                    WHERE field = 'geometry'
-                    GROUP BY entity, field
-                ) i
-                    ON i.entity = e.entity
-                    AND i.field = 'geometry'
-            """
-            issue_selects = "COALESCE(i.line_number, '') AS line_number"
-
     rows = sqlite_conn.execute(
-        f"""
+        """
             SELECT DISTINCT
                 e.entity,
                 e.dataset,
                 COALESCE(fr.resource, '') AS resource,
-                {issue_selects},
+                COALESCE(fr.line_number, '') AS line_number,
                 COALESCE(fr.entry_number, '') AS entry_number
             FROM entity e
             LEFT JOIN fact f
@@ -299,7 +267,6 @@ def entity_load_context_rows(sqlite_conn, source):
                 AND f.field = 'geometry'
             LEFT JOIN fact_resource fr
                 ON fr.fact = f.fact
-            {issue_join}
             WHERE e.dataset = ?;
         """,
         (source,),
@@ -423,11 +390,12 @@ def remove_unfixable_invalid_geometries(
 
     logger.info(f"Removed {rowcount} rows with unfixable invalid geometries")
 
-def update_entity_subdivided(connection, source):   
+
+def update_entity_subdivided(connection, source):
     delete_sql = """
             DELETE FROM entity_subdivided WHERE dataset = %s ;
         """
-    
+
     update_entity_subdivided = """
         INSERT INTO entity_subdivided (entity, dataset, geometry_subdivided)
             SELECT e.entity, e.dataset, ST_Multi(g.geom)
@@ -442,7 +410,7 @@ def update_entity_subdivided(connection, source):
         """.strip()
 
     with connection.cursor() as cursor:
-        
+
         cursor.execute(delete_sql, (source,))
         deleted_count = cursor.rowcount
 
@@ -452,7 +420,10 @@ def update_entity_subdivided(connection, source):
     connection.commit()
 
     logger.info(f"Updated entity_sub_divided table - {deleted_count} rows deleted")
-    logger.info(f"Updated entity_sub_divided table - {rowcount} rows with subdivided geometries")
+    logger.info(
+        f"Updated entity_sub_divided table - {rowcount} rows with subdivided geometries"
+    )
+
 
 if __name__ == "__main__":
     do_replace_cli()

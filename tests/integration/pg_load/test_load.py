@@ -122,18 +122,15 @@ def test_remove_unfixable_invalid_geometries(postgresql_conn, create_db, tmp_pat
     sqlite_conn.execute("CREATE TABLE entity (entity INTEGER, dataset TEXT)")
     sqlite_conn.execute("CREATE TABLE fact (fact TEXT, entity INTEGER, field TEXT)")
     sqlite_conn.execute(
-        "CREATE TABLE fact_resource (fact TEXT, resource TEXT, entry_number INTEGER)"
-    )
-    sqlite_conn.execute(
-        "CREATE TABLE issue (entity INTEGER, field TEXT, line_number INTEGER)"
+        "CREATE TABLE fact_resource ("
+        "fact TEXT, resource TEXT, line_number INTEGER, entry_number INTEGER)"
     )
     sqlite_conn.execute("INSERT INTO entity VALUES (?, ?)", (entity, source))
     sqlite_conn.execute("INSERT INTO fact VALUES (?, ?, ?)", ("fact-1", entity, "geometry"))
     sqlite_conn.execute(
-        "INSERT INTO fact_resource VALUES (?, ?, ?)",
-        ("fact-1", "resource-1", 7),
+        "INSERT INTO fact_resource VALUES (?, ?, ?, ?)",
+        ("fact-1", "resource-1", 9, 7),
     )
-    sqlite_conn.execute("INSERT INTO issue VALUES (?, ?, ?)", (entity, "geometry", 9))
 
     cursor = postgresql_conn.cursor()
     cursor.execute(
