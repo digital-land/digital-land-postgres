@@ -10,7 +10,7 @@ sys.path.insert(0, parent_dir)
 from task.pgload.load import (  # noqa: E402
     make_valid_multipolygon,
     make_valid_with_handle_geometry_collection,
-    remove_unfixable_invalid_geometries,
+    null_invalid_geometries,
     SQL,
     call_sql_queries,
     export_tables,
@@ -113,77 +113,63 @@ def test_make_valid_with_handle_geometry_collection(postgresql_conn, sources):
     cursor.close()
 
 
-def test_remove_unfixable_invalid_geometries(postgresql_conn, create_db, tmp_path):
+def test_null_invalid_geometries(postgresql_conn, create_db):
     source = "article-4-direction"
-    entity = 9999991
-    issue_dir = tmp_path / "issue"
-
-    sqlite_conn = sqlite3.connect(":memory:")
-    sqlite_conn.execute("CREATE TABLE entity (entity INTEGER, dataset TEXT)")
-    sqlite_conn.execute("CREATE TABLE fact (fact TEXT, entity INTEGER, field TEXT)")
-    sqlite_conn.execute(
-        "CREATE TABLE fact_resource ("
-        "fact TEXT, resource TEXT, line_number INTEGER, entry_number INTEGER)"
-    )
-    sqlite_conn.execute("INSERT INTO entity VALUES (?, ?)", (entity, source))
-    sqlite_conn.execute("INSERT INTO fact VALUES (?, ?, ?)", ("fact-1", entity, "geometry"))
-    sqlite_conn.execute(
-        "INSERT INTO fact_resource VALUES (?, ?, ?, ?)",
-        ("fact-1", "resource-1", 9, 7),
-    )
+    invalid_entity = 9999991
+    valid_entity = 9999992
 
     cursor = postgresql_conn.cursor()
+    # unfixable (self-intersecting bowtie) with a geojson value alongside it
     cursor.execute(
         """
-            INSERT INTO entity (
-                entity,
-                name,
-                dataset,
-                reference,
-                typology,
-                geometry
-            ) VALUES (
-                %s,
-                'Unfixable invalid geometry',
-                %s,
-                'unfixable-invalid-geometry',
+            INSERT INTO entity (entity, name, dataset, reference, typology, geometry, geojson)
+            VALUES (
+                %s, 'Unfixable invalid geometry', %s, 'unfixable-invalid-geometry',
                 'geography',
-                ST_GeomFromText('POLYGON((0 0,1 1,1 0,0 1,0 0))')
+                ST_GeomFromText('POLYGON((0 0,1 1,1 0,0 1,0 0))'),
+                '{"type":"Polygon"}'
             );
         """,
-        (entity, source),
+        (invalid_entity, source),
+    )
+    # a valid geometry that must be left untouched
+    cursor.execute(
+        """
+            INSERT INTO entity (entity, name, dataset, reference, typology, geometry, geojson)
+            VALUES (
+                %s, 'Valid geometry', %s, 'valid-geometry', 'geography',
+                ST_GeomFromText('POLYGON((0 0,0 1,1 1,1 0,0 0))'),
+                '{"type":"Polygon"}'
+            );
+        """,
+        (valid_entity, source),
     )
     postgresql_conn.commit()
     cursor.close()
 
-    remove_unfixable_invalid_geometries(
-        postgresql_conn, source, sqlite_conn=sqlite_conn, issue_dir=str(issue_dir)
-    )
+    null_invalid_geometries(postgresql_conn, source)
 
     cursor = postgresql_conn.cursor()
-    cursor.execute("SELECT COUNT(*) FROM entity WHERE entity = %s", (entity,))
-    rowcount = cursor.fetchone()[0]
+    # invalid entity: row kept, geometry + geojson nulled, other fields intact
+    cursor.execute(
+        "SELECT geometry, geojson, name, reference FROM entity WHERE entity = %s",
+        (invalid_entity,),
+    )
+    geometry, geojson, name, reference = cursor.fetchone()
+    assert geometry is None
+    assert geojson is None
+    assert name == "Unfixable invalid geometry"
+    assert reference == "unfixable-invalid-geometry"
+
+    # valid entity untouched
+    cursor.execute(
+        "SELECT geometry IS NOT NULL, geojson IS NOT NULL FROM entity WHERE entity = %s",
+        (valid_entity,),
+    )
+    geometry_present, geojson_present = cursor.fetchone()
+    assert geometry_present
+    assert geojson_present
     cursor.close()
-
-    assert rowcount == 0
-
-    issue_path = issue_dir / source / "resource-1.csv"
-    with open(issue_path, newline="") as f:
-        rows = list(csv.DictReader(f))
-
-    assert rows == [
-        {
-            "dataset": source,
-            "resource": "resource-1",
-            "line-number": "9",
-            "entry-number": "7",
-            "field": "geometry",
-            "entity": str(entity),
-            "issue-type": "invalid geometry - not fixable",
-            "value": "Self-intersection[0.5 0.5]",
-            "message": "Geometry remained invalid after PostGIS repair",
-        }
-    ]
 
 
 def test_unretired_entities(postgresql_conn):
@@ -245,12 +231,16 @@ def test_remove_invalid_datasets_deletes_from_old_entity(postgresql_conn, create
     cursor.close()
 
     with patch("task.pgload.load.get_pg_connection", return_value=postgresql_conn):
-        remove_invalid_datasets(["valid-dataset", "article-4-direction", "ancient-woodland"])
+        remove_invalid_datasets(
+            ["valid-dataset", "article-4-direction", "ancient-woodland"]
+        )
 
     cursor = postgresql_conn.cursor()
 
     cursor.execute("SELECT COUNT(*) FROM old_entity WHERE dataset = 'invalid-dataset'")
-    assert cursor.fetchone()[0] == 0, "invalid-dataset rows should be removed from old_entity"
+    assert (
+        cursor.fetchone()[0] == 0
+    ), "invalid-dataset rows should be removed from old_entity"
 
     cursor.execute("SELECT COUNT(*) FROM old_entity WHERE old_entity = 9990001")
     assert cursor.fetchone()[0] == 1, "valid-dataset row should remain in old_entity"
