@@ -20,13 +20,15 @@ csv.field_size_limit(sys.maxsize)
 
 DATABASE_NAME = os.getenv("DATABASE_NAME")
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+logger.propagate = False
 logging.basicConfig(level=logging.INFO)
 streamHandler = logging.StreamHandler(sys.stdout)
 formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 streamHandler.setFormatter(formatter)
 logger.addHandler(streamHandler)
 
-complex_geom_datasets = ['flood-risk-zone']
+complex_geom_datasets = ["flood-risk-zone"]
 export_tables = {
     DATABASE_NAME: ["entity", "old_entity"],
     "digital-land": [
@@ -126,8 +128,10 @@ def do_replace_table(table, source, csv_filename, postgress_conn, sqlite_conn):
 
         make_valid_with_handle_geometry_collection(postgress_conn, source)
 
+        null_invalid_geometries(postgress_conn, source)
+
         if source in complex_geom_datasets:
-            update_entity_subdivided(postgress_conn,source)
+            update_entity_subdivided(postgress_conn, source)
 
 
 def do_replace(source, sqlite_conn, tables_to_export=None):
@@ -225,11 +229,43 @@ def make_valid_multipolygon(connection, source):
 
     logger.info(f"Updated {rowcount} rows with valid multi polygons")
 
-def update_entity_subdivided(connection, source):   
+
+def null_invalid_geometries(connection, source):
+    """
+    Null the geometry and geojson of any entity whose geometry is still invalid
+    after the PostGIS repair step. The entity row is kept — only the unusable
+    shape is dropped so it stops breaking tiles and spatial queries.
+
+    This is non-destructive and re-derived on every load: the invalid data
+    remains in the source resources, and the pipeline already raises an
+    'invalid geometry - not fixable' issue (which surfaces as an LPA task), so
+    no issue is written here.
+    """
+    null_invalid = """
+        UPDATE entity
+        SET geometry = NULL,
+            geojson = NULL
+        WHERE dataset = %s
+            AND geometry IS NOT NULL
+            AND NOT ST_IsValid(geometry);
+    """.strip()
+
+    with connection.cursor() as cursor:
+        cursor.execute(null_invalid, (source,))
+        rowcount = cursor.rowcount
+    connection.commit()
+
+    logger.info(
+        f"null_invalid_geometries: nulled {rowcount} invalid "
+        f"geometries for dataset '{source}'"
+    )
+
+
+def update_entity_subdivided(connection, source):
     delete_sql = """
             DELETE FROM entity_subdivided WHERE dataset = %s ;
         """
-    
+
     update_entity_subdivided = """
         INSERT INTO entity_subdivided (entity, dataset, geometry_subdivided)
             SELECT e.entity, e.dataset, ST_Multi(g.geom)
@@ -244,7 +280,6 @@ def update_entity_subdivided(connection, source):
         """.strip()
 
     with connection.cursor() as cursor:
-        
         cursor.execute(delete_sql, (source,))
         deleted_count = cursor.rowcount
 
@@ -254,7 +289,10 @@ def update_entity_subdivided(connection, source):
     connection.commit()
 
     logger.info(f"Updated entity_sub_divided table - {deleted_count} rows deleted")
-    logger.info(f"Updated entity_sub_divided table - {rowcount} rows with subdivided geometries")
+    logger.info(
+        f"Updated entity_sub_divided table - {rowcount} rows with subdivided geometries"
+    )
+
 
 if __name__ == "__main__":
     do_replace_cli()
