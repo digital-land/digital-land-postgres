@@ -58,6 +58,9 @@ jobs:
 
   deploy:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     env:
       DOCKER_REPO: ${{ secrets.DEPLOY_DOCKER_REPOSITORY }}
     environment: staging
@@ -69,8 +72,7 @@ jobs:
 
       - uses: aws-actions/configure-aws-credentials@v6
         with:
-          aws-access-key-id: ${{ secrets.DEPLOY_AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.DEPLOY_AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ secrets.DEPLOY_AWS_ROLE_ARN }}
           aws-region: eu-west-2
 
       - uses: aws-actions/amazon-ecr-login@v2
