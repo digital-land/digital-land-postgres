@@ -9,6 +9,9 @@ test:: test-integration
 test-integration:
 	python -m pytest --cov task tests/integration
 
-# TODO add flake8 back in to the linting
 lint::
+	black --check .
+	flake8 .
+
+format::
 	black .

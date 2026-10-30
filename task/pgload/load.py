@@ -273,7 +273,7 @@ def update_entity_subdivided(connection, source):
             JOIN LATERAL (
             SELECT (ST_Dump(ST_Subdivide(ST_MakeValid(e.geometry)))).geom
             ) AS g ON true
-            WHERE dataset = %s 
+            WHERE dataset = %s
             AND e.geometry IS NOT NULL
             AND ST_IsValid(e.geometry);
 
