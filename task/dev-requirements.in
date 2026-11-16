@@ -1,5 +1,5 @@
 -c requirements.txt
-pytest
+pytest<8  # pytest-pudb 0.7.0 is incompatible with pytest 8+
 flake8==7.1.2
 pre-commit
 playwright

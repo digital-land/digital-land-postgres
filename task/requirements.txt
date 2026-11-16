@@ -1,5 +1,5 @@
 -e git+https://github.com/digital-land/pipeline.git#egg=digital-land
 click==8.0.3
-psycopg2-binary==2.9.3
+psycopg2-binary==2.9.10
 requests
 datasette<0.65.0
