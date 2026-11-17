@@ -92,7 +92,7 @@ mergedeep==1.3.4
     # via datasette
 mypy-extensions==1.0.0
     # via typing-inspect
-numpy==1.26.4
+numpy==2.1.3
     # via
     #   digital-land
     #   pandas
@@ -101,13 +101,13 @@ openpyxl==3.1.4
     # via digital-land
 packaging==24.1
     # via marshmallow
-pandas==2.2.2
+pandas==2.2.3
     # via digital-land
 pint==0.24.1
     # via datasette
 pluggy==1.5.0
     # via datasette
-psycopg2==2.9.9
+psycopg2==2.9.10
     # via -r task/requirements/requirements.in
 pydantic==2.7.4
     # via digital-land
@@ -115,7 +115,7 @@ pydantic-core==2.18.4
     # via pydantic
 pyparsing==3.1.2
     # via rdflib
-pyproj==3.6.1
+pyproj==3.7.0
     # via digital-land
 python-dateutil==2.9.0.post0
     # via pandas
@@ -134,7 +134,7 @@ requests==2.32.3
     #   -r task/requirements/requirements.in
     #   digital-land
     #   esridump
-shapely==2.0.2
+shapely==2.0.6
     # via digital-land
 six==1.16.0
     # via
